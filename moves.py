@@ -5,8 +5,10 @@ from board import *
 
 
 class Move:
-    def __init__(self, move_from, move_to,promotion=0,castle=0):
+    def __init__(self, move_from, move_to, promotion=0, castle=0, enable_passant=None):
         # parameters passed either both as pairs or both as integers
+        if enable_passant is None:
+            enable_passant = set()
         if isinstance(move_from, tuple):
             self.move_from = 8 * move_from[0] + move_from[1]
             self.move_to = 8 * move_to[0] + move_to[1]
@@ -14,7 +16,8 @@ class Move:
             self.move_from = move_from
             self.move_to = move_to
         self.promotion = promotion  # 0 - no promotion, else - the piece to promote to
-        self.castle = castle  # 0 - not a castle move, 1 short castle, 2 long castle
+        self.castle = castle  # 0 - not a castle move, 1 short castle, 2 long castle, 3 en passant
+        self.enable_passant = enable_passant # set of en passant moves for next turn
 
     def __eq__(self, other):
         if not isinstance(other, Move):
@@ -38,7 +41,8 @@ class Move:
         return self.promotion
     def get_castle(self):
         return self.castle
-
+    def get_passants(self):
+        return self.enable_passant
 
 def calc_pawn(chessboard, move_from, piece):
     i = move_from[0] * 8 + move_from[1]
@@ -51,7 +55,14 @@ def calc_pawn(chessboard, move_from, piece):
             moves.add(Move(i, i + 8 * which_colour, promotion=QUEEN))
         if 0 <= i + 16 * which_colour < 64:
             if chessboard[i + 16 * which_colour] == 0 and not piece.moved:
-                moves.add(Move(i, i + 16 * which_colour))
+                passants_to_add = set()
+                for capture in [15, 17]:
+                    if 0 <= i + capture * which_colour < 64 and abs(i % 8 - (i + capture * which_colour) % 8) < 2:
+                        if chessboard[i + capture * which_colour] != 0:
+                            if chessboard[i + capture * which_colour].colour != piece.colour:
+                                passants_to_add.add(Move(i + capture*which_colour, i +which_colour*8,castle=3))
+
+                moves.add(Move(i, i + 16 * which_colour,enable_passant = passants_to_add))
     for capture in [7, 9]:
         if  0 <= i + capture * which_colour < 64 and abs(i%8 - (i+capture*which_colour)%8) < 2:
             if chessboard[i + capture * which_colour] != 0:
@@ -167,32 +178,10 @@ def all_moves(chessboard, colour):
         if chessboard[i]!=0:
             if chessboard[i].colour == colour:
                 moves = moves | calc_piece(chessboard,(floor(i/8),i%8),chessboard[i].type)
-
     return moves
+
 def king_capture(chessboard, move):
     if chessboard[move.move_to] != 0:
         if chessboard[move.move_to].type == KING:
             return True
     return False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
