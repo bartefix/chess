@@ -27,6 +27,9 @@ class Board:
         for i in range(8):
             self.chessboard[48 + i] = Piece(PAWN, WHITE)
 
+        self.passants = set()
+        self.who_to_move = WHITE
+
     def __getitem__(self, indices):
         if isinstance(indices, tuple):
             i,j = indices

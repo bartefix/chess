@@ -2,7 +2,7 @@ from math import floor
 
 from pieces import *
 from board import *
-
+import copy
 
 class Move:
     def __init__(self, move_from, move_to, promotion=0, castle=0, enable_passant=None):
@@ -156,8 +156,8 @@ def calc_queen(chessboard, move_from, piece):
     return moves
 
 
-def calc_piece(chessboard, move_from, piece):
-    chessboard = chessboard.chessboard
+def calc_piece_help(board, move_from, piece):
+    chessboard = board.chessboard
     type = piece.type
     if type == KING:
         return calc_king(chessboard, move_from, piece)
@@ -172,16 +172,70 @@ def calc_piece(chessboard, move_from, piece):
     if type == PAWN:
         return calc_pawn(chessboard, move_from, piece)
 
-def all_moves(chessboard, colour):
+def calc_piece(board, move_from, piece):
+    passants = board.passants
+    moves = calc_piece_help(board, move_from, piece)
+    if piece.type != PAWN:
+        return moves
+    else:
+        for move in passants:
+            if move.getpair_from() == move_from:
+                moves.add(move)
+        return moves
+
+def all_moves(board, colour):
     moves = set()
-    for i in range(64):
-        if chessboard[i]!=0:
-            if chessboard[i].colour == colour:
-                moves = moves | calc_piece(chessboard,(floor(i/8),i%8),chessboard[i].type)
+    for i in range(8):
+        for j in range(8):
+            if board[i,j]!=0:
+                if board[i,j].colour == colour:
+                    moves = moves | calc_piece(board,(i,j),board[i,j])
     return moves
 
 def king_capture(chessboard, move):
-    if chessboard[move.move_to] != 0:
+    if chessboard[move.move_to] != 0: # this is single index format
         if chessboard[move.move_to].type == KING:
             return True
     return False
+
+def make_move(board, move):
+    board.passants.clear()
+    chessboard = board.chessboard
+    i = move.move_from
+    j = move.move_to
+    piece = chessboard[i]
+    chessboard[i] = 0
+    if move.get_promotion() != 0:
+        chessboard[j] = Piece(move.get_promotion(), piece.colour)
+        board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+        return
+    if move.get_castle() != 0:
+        if move.get_castle() == 1:
+            chessboard[j] = piece
+            chessboard[j].moved = True
+            chessboard[i + 1] = chessboard[i + 3]
+            chessboard[i + 3] = 0
+            chessboard[i + 1].moved = True
+        elif move.get_castle() == 2:
+            chessboard[j] = piece
+            chessboard[j].moved = True
+            chessboard[i - 1] = chessboard[i - 4]
+            chessboard[i - 4] = 0
+            chessboard[i - 1].moved = True
+        else:
+            which_colour = 1 if piece.colour == BLACK else -1
+            chessboard[j-8*which_colour] = 0
+
+    chessboard[j] = piece
+    chessboard[j].moved = True
+    if len(move.enable_passant) > 0:
+        board.passants = move.get_passants()
+    board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+
+def islegal(board, move):
+    board_copy = copy.deepcopy(board)
+    make_move(board_copy, move)
+    for move in all_moves(board_copy,board_copy.who_to_move):
+        if king_capture(board_copy.chessboard, move):
+            return False
+    return True

@@ -59,60 +59,29 @@ def retrieve_move(moves, move_from, move_to):
 
 
 def valid_move(board, coords, move_from, piece, who):
-    # if min(coords) < 0 or max(coords) > 7:
-    #     return False
     if piece.colour != who:
         return None
-    moves = calc_piece_passant(board, move_from, piece,passants)
-    return retrieve_move(moves, move_from, coords)
+    moves = calc_piece(board, move_from, piece)
+    new_moves = set()
+    for move in moves:
+        if islegal(board, move):
+            new_moves.add(move)
+    return retrieve_move(new_moves, move_from, coords)
 
+def valid_moves(board,move_piece_from, selected_piece):
+    if selected_piece.colour != board.who_to_move:
+        return set()
+    moves = calc_piece(board, move_piece_from, selected_piece)
+    new_moves = set()
+    for move in moves:
+        if islegal(board,move):
+            new_moves.add(move)
+    return new_moves
 
 def draw_moves(moves):
     for move in moves:
         (i, j) = move.getpair_to()
         window.blit(sniper, (j * BLOCK + 10, i * BLOCK + 10))
-
-def calc_piece_passant(board, move_from, piece,passants):
-    moves = calc_piece(board, move_from, piece)
-    if piece.type != PAWN:
-        return moves
-    else:
-        for move in passants:
-            print(move.getpair_from(), move_from)
-            if move.getpair_from() == move_from:
-                moves.add(move)
-        return moves
-
-def make_move(chessboard, move):
-    i = move.move_from
-    j = move.move_to
-    piece = chessboard[i]
-    chessboard[i] = 0
-    if move.get_promotion() != 0:
-        chessboard[j] = Piece(move.get_promotion(), piece.colour)
-        return
-    if move.get_castle() != 0:
-        if move.get_castle() == 1:
-            chessboard[j] = piece
-            chessboard[j].moved = True
-            chessboard[i + 1] = chessboard[i + 3]
-            chessboard[i + 3] = 0
-            chessboard[i + 1].moved = True
-        elif move.get_castle() == 2:
-            chessboard[j] = piece
-            chessboard[j].moved = True
-            chessboard[i - 1] = chessboard[i - 4]
-            chessboard[i - 4] = 0
-            chessboard[i - 1].moved = True
-        else:
-            which_colour = 1 if piece.colour == BLACK else -1
-            chessboard[j-8*which_colour] = 0
-
-    chessboard[j] = piece
-    chessboard[j].moved = True
-    if len(move.enable_passant) > 0:
-        global passants
-        passants = move.get_passants()
 
 def draw_button():
     p.draw.rect(window, button_color, button_rect)
@@ -128,27 +97,23 @@ def draw_button():
         text = font.render("STALEMATE", True, (0,0,0))
         window.blit(text,(WIDTH//2-text.get_width()//2, 30))
     if state == LOST:
-        player = "WHITE" if who_to_move == WHITE else "BLACK"
+        player = "WHITE" if board.who_to_move == WHITE else "BLACK"
         text = font.render(f"{player} WON", True, (0, 0, 0))
         window.blit(text, (WIDTH // 2 - text.get_width() // 2, 30))
 
 window = p.display.set_mode((WIDTH, HEIGHT))
 board = Board()
-who_to_move = WHITE
 selected_piece = 0
 move_piece_from = (-1, -1)
 available_moves = set()
-passants = set()
 
 state = PLAYING
 
 def setup_game():
     board = Board()
-    who_to_move = WHITE
     selected_piece = 0
     move_piece_from = (-1, -1)
     available_moves = set()
-    passants = set()
 
 if __name__ == "__main__":
     draw_board(board)
@@ -180,13 +145,13 @@ if __name__ == "__main__":
                         coords = (i, j)
                         selected_piece = board[i, j]
                         move_piece_from = coords
-                        board[i, j] = 0
+                        #board[i, j] = 0
                         #print(coords)
                         if selected_piece != 0:
                             draw_board(board)
-                            #for move in passants:
-                                #print(move.getpair_from(), move.getpair_to())
-                            available_moves = calc_piece_passant(board, move_piece_from, selected_piece,passants)
+                            available_moves = valid_moves(board, move_piece_from, selected_piece)
+                            #available_moves = calc_piece(board, move_piece_from, selected_piece)
+                            #available_moves = all_moves(board, board.who_to_move)
                             draw_moves(available_moves)
                             draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
 
@@ -202,12 +167,11 @@ if __name__ == "__main__":
                     coords = (floor(event.pos[0] / BLOCK), floor(event.pos[1] / BLOCK))
                     (j, i) = coords
                     coords = (i, j)
-                    if (move := valid_move(board, coords, move_piece_from, selected_piece, who_to_move)) is not None:
+                    if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None:
                         board[move_piece_from] = selected_piece
-                        passants.clear()
-                        make_move(board.chessboard, move)
+                        make_move(board, move)
                         selected_piece = 0
-                        who_to_move = BLACK if who_to_move == WHITE else WHITE
+
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
                         selected_piece = 0
