@@ -88,15 +88,19 @@ def calc_king(chessboard, move_from, piece):
                 moves.add(Move(i, i + offset))
     if not piece.moved:
         if piece.colour == WHITE:
-            if chessboard[61]==0 and chessboard[62]==0 and not chessboard[63].moved:
-                moves.add(Move(i,i+2,castle=1))
-            if chessboard[57]==0 and chessboard[58]==0 and chessboard[59]==0 and not chessboard[56].moved:
-                moves.add(Move(i,i-3,castle=2))
+            if chessboard[63]!=0:
+                if chessboard[61]==0 and chessboard[62]==0 and not chessboard[63].moved:
+                    moves.add(Move(i,i+2,castle=1))
+            if chessboard[56] != 0:
+                if chessboard[57]==0 and chessboard[58]==0 and chessboard[59]==0 and not chessboard[56].moved:
+                    moves.add(Move(i,i-3,castle=2))
         else:
-            if chessboard[5]==0 and chessboard[6]==0 and not chessboard[7].moved:
-                moves.add(Move(i,i+2,castle=1))
-            if chessboard[1]==0 and chessboard[2]==0 and chessboard[3]==0 and not chessboard[0].moved:
-                moves.add(Move(i,i-2,castle=2))
+            if chessboard[7] != 0:
+                if chessboard[5]==0 and chessboard[6]==0 and not chessboard[7].moved:
+                    moves.add(Move(i,i+2,castle=1))
+            if chessboard[0] != 0:
+                if chessboard[1]==0 and chessboard[2]==0 and chessboard[3]==0 and not chessboard[0].moved:
+                    moves.add(Move(i,i-2,castle=2))
     return moves
 
 
@@ -192,6 +196,14 @@ def all_moves(board, colour):
                     moves = moves | calc_piece(board,(i,j),board[i,j])
     return moves
 
+def all_legal_moves(board, colour):
+    moves = all_moves(board, colour)
+    new_moves = set()
+    for move in moves:
+        if islegal(board, move):
+            new_moves.add(move)
+    return new_moves
+
 def king_capture(chessboard, move):
     if chessboard[move.move_to] != 0: # this is single index format
         if chessboard[move.move_to].type == KING:
@@ -199,6 +211,9 @@ def king_capture(chessboard, move):
     return False
 
 def make_move(board, move):
+    if move is None:
+        board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+        return
     board.passants.clear()
     chessboard = board.chessboard
     i = move.move_from
@@ -239,3 +254,30 @@ def islegal(board, move):
         if king_capture(board_copy.chessboard, move):
             return False
     return True
+
+def insufficient_material(board):
+    chessboard = board.chessboard
+    count_pieces = [0,0,0,0,0,0] # 0-king, 1-queen,2-rook,3-bishop, 4-knight,5-pawn
+    for i in range(64):
+        if chessboard[i]!=0:
+            count_pieces[chessboard[i].type-1] += 1
+    if count_pieces[1]+count_pieces[2]+count_pieces[5] > 0:
+        return False
+    else:
+        if count_pieces[3] + count_pieces[4] < 3:
+            return True
+        else:
+            return False
+
+def isgameover(board):
+    moves = all_legal_moves(board,board.who_to_move)
+    for move in moves:
+        print(move.getpair_from(),move.getpair_to())
+    if len(moves) == 0:
+        if not islegal(board,None):
+            return CHECKMATE
+        else:
+            return STALEMATE
+    if insufficient_material(board):
+        return DRAW
+    return PLAYING

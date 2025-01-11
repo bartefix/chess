@@ -96,8 +96,8 @@ def draw_button():
     if state==STALEMATE:
         text = font.render("STALEMATE", True, (0,0,0))
         window.blit(text,(WIDTH//2-text.get_width()//2, 30))
-    if state == LOST:
-        player = "WHITE" if board.who_to_move == WHITE else "BLACK"
+    if state == CHECKMATE:
+        player = "WHITE" if board.who_to_move == BLACK else "BLACK"
         text = font.render(f"{player} WON", True, (0, 0, 0))
         window.blit(text, (WIDTH // 2 - text.get_width() // 2, 30))
 
@@ -110,6 +110,7 @@ available_moves = set()
 state = PLAYING
 
 def setup_game():
+    global selected_piece, move_piece_from, available_moves,board
     board = Board()
     selected_piece = 0
     move_piece_from = (-1, -1)
@@ -131,6 +132,7 @@ if __name__ == "__main__":
                     run = False
                 if event.type == p.MOUSEBUTTONUP:
                     if button_rect.collidepoint(event.pos):
+                        print("RESTART")
                         setup_game()
                         state = PLAYING
                         draw_board(board)
@@ -170,11 +172,12 @@ if __name__ == "__main__":
                     if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None:
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
-                        selected_piece = 0
-
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
-                        selected_piece = 0
+                    selected_piece = 0
                     draw_board(board)
+                    state = isgameover(board)
+                    print(state)
         pygame.display.update()
+        #print(int(clock.get_fps()))
     p.quit()
