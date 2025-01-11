@@ -271,8 +271,6 @@ def insufficient_material(board):
 
 def isgameover(board):
     moves = all_legal_moves(board,board.who_to_move)
-    for move in moves:
-        print(move.getpair_from(),move.getpair_to())
     if len(moves) == 0:
         if not islegal(board,None):
             return CHECKMATE

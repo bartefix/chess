@@ -9,7 +9,7 @@ from moves import *
 p.init()
 button_rect = p.Rect(80, 100, 160, 160)  # x, y, width, height
 button_color = (255, 255, 255)
-
+cached_background = None
 chessboard_img = p.image.load("graphics\chessboard.jpg")
 b_king = p.image.load("graphics\\b_king_png_512px.png")
 b_queen = p.image.load("graphics\\b_queen_png_512px.png")
@@ -36,6 +36,13 @@ def draw_piece(i, j, piece):
     window.blit(resize(table[type - 1]),
                 (j * BLOCK + (BLOCK - table[type - 1].get_width()) / 2, i * BLOCK + BLOCK / 10))
 
+def draw_piece2(i, j, piece, surface):
+    type = piece.type + piece.colour
+    resized_piece = resize(table[type - 1])
+    x = j * BLOCK + (BLOCK - resized_piece.get_width()) / 2
+    y = i * BLOCK + BLOCK / 10
+    surface.blit(resized_piece, (x, y))
+
 
 def draw_piece_pixel(i, j, piece):
     type = piece.type + piece.colour
@@ -43,11 +50,16 @@ def draw_piece_pixel(i, j, piece):
 
 
 def draw_board(board):
-    window.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))
+    global cached_background
+
+    cached_background = p.Surface((WIDTH, HEIGHT))  # Create a new cached surface
+    cached_background.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))  # Draw the board
+
+    #window.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))
     for i in range(8):
         for j in range(8):
-            if board[i, j] != 0:
-                draw_piece(i, j, board[i, j])
+            if board[i, j] != 0 and not move_piece_from == (i,j):
+                draw_piece2(i, j, board[i, j],cached_background)
 
 
 def retrieve_move(moves, move_from, move_to):
@@ -118,6 +130,7 @@ def setup_game():
 
 if __name__ == "__main__":
     draw_board(board)
+    window.blit(cached_background, (0, 0))
     pygame.display.update()
     run = True
     clock = p.time.Clock()
@@ -136,6 +149,7 @@ if __name__ == "__main__":
                         setup_game()
                         state = PLAYING
                         draw_board(board)
+                        window.blit(cached_background, (0, 0))
                         pygame.display.update()
             else:
                 if event.type == p.QUIT:
@@ -150,34 +164,32 @@ if __name__ == "__main__":
                         #board[i, j] = 0
                         #print(coords)
                         if selected_piece != 0:
-                            draw_board(board)
                             available_moves = valid_moves(board, move_piece_from, selected_piece)
-                            #available_moves = calc_piece(board, move_piece_from, selected_piece)
-                            #available_moves = all_moves(board, board.who_to_move)
+                            draw_board(board)
+                            window.blit(cached_background, (0, 0))
                             draw_moves(available_moves)
                             draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
 
                 if event.type == p.MOUSEMOTION:
                     if selected_piece != 0:
-                        draw_board(board)
+                        window.blit(cached_background, (0, 0))
                         draw_moves(available_moves)
                         draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
 
                 if event.type == p.MOUSEBUTTONUP:
                     if selected_piece == 0:
                         continue
-                    coords = (floor(event.pos[0] / BLOCK), floor(event.pos[1] / BLOCK))
-                    (j, i) = coords
-                    coords = (i, j)
+                    coords = (floor(event.pos[1] / BLOCK), floor(event.pos[0] / BLOCK))
                     if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None:
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
                     selected_piece = 0
+                    move_piece_from = (-1, -1)
                     draw_board(board)
+                    window.blit(cached_background, (0, 0))
                     state = isgameover(board)
-                    print(state)
         pygame.display.update()
-        #print(int(clock.get_fps()))
+        print(int(clock.get_fps()))
     p.quit()
