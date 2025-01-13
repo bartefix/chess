@@ -5,11 +5,13 @@ import pygame as p
 from constants import *
 from board import Board
 from moves import *
+from Bot import Bot
+import time
 
 p.init()
 button_rect = p.Rect(80, 100, 160, 160)  # x, y, width, height
 button_color = (255, 255, 255)
-cached_background = None
+cached_background = p.Surface((WIDTH, HEIGHT))
 chessboard_img = p.image.load("graphics\chessboard.jpg")
 b_king = p.image.load("graphics\\b_king_png_512px.png")
 b_queen = p.image.load("graphics\\b_queen_png_512px.png")
@@ -118,25 +120,50 @@ board = Board()
 selected_piece = 0
 move_piece_from = (-1, -1)
 available_moves = set()
-
+lastmove = None
 state = PLAYING
-
+bot = Bot(board)
 def setup_game():
-    global selected_piece, move_piece_from, available_moves,board
+    global selected_piece, move_piece_from, available_moves,board,bot
     board = Board()
     selected_piece = 0
     move_piece_from = (-1, -1)
     available_moves = set()
-
+    bot = Bot(board)
 if __name__ == "__main__":
     draw_board(board)
     window.blit(cached_background, (0, 0))
     pygame.display.update()
     run = True
     clock = p.time.Clock()
+    first_turn = True
     while run:
         clock.tick(FPS)
         for event in p.event.get():
+            if first_turn:
+                bot.benchmark()
+                first_turn = False
+            # if board.who_to_move == BLACK and state==PLAYING:
+            #     bot.benchmark()
+            #     time.sleep(TIMEBETWEENMOVES)
+            #     move = bot.give_move()
+            #     make_move(board, move)
+            #     draw_board(board)
+            #     window.blit(cached_background, (0, 0))
+            #     state = isgameover(board)
+            #     pygame.display.update()
+            #     continue
+
+            # if board.who_to_move == WHITE and state==PLAYING:
+            #     time.sleep(TIMEBETWEENMOVES)
+            #     move = bot.give_move()
+            #     make_move(board, move)
+            #     draw_board(board)
+            #     window.blit(cached_background, (0, 0))
+            #     state = isgameover(board)
+            #     pygame.display.update()
+            #     continue
+
             if state != PLAYING:
                 draw_board(board)
                 draw_button()
@@ -154,6 +181,13 @@ if __name__ == "__main__":
             else:
                 if event.type == p.QUIT:
                     run = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT:
+                        if lastmove is not None:
+                            unmake_move(board,lastmove)
+                        print("left clicked")
+                        draw_board(board)
+                        window.blit(cached_background, (0, 0))
                 if event.type == p.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         coords = (floor(event.pos[0] / BLOCK), floor(event.pos[1] / BLOCK))
@@ -183,6 +217,7 @@ if __name__ == "__main__":
                     if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None:
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
+                        lastmove = move
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
                     selected_piece = 0
@@ -191,5 +226,5 @@ if __name__ == "__main__":
                     window.blit(cached_background, (0, 0))
                     state = isgameover(board)
         pygame.display.update()
-        print(int(clock.get_fps()))
+        #print(int(clock.get_fps()))
     p.quit()

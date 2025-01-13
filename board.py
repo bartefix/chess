@@ -30,6 +30,12 @@ class Board:
         self.passants = set()
         self.who_to_move = WHITE
 
+        self.previous_piece = None
+        self.previous_castle = 0
+        self.previous_passants = None
+        self.previous_promotion = False
+        self.previous_passant_move = False
+        self.has_it_moved = False
     def __getitem__(self, indices):
         if isinstance(indices, tuple):
             i,j = indices

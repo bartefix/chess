@@ -214,6 +214,16 @@ def make_move(board, move):
     if move is None:
         board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
         return
+    board.previous_move = move
+    board.previous_passants = board.passants.copy()
+    board.previous_castle = 0
+    board.previous_piece = None
+    board.previous_promotion = False
+    board.previous_passant_move = False
+    board.has_it_moved = board.chessboard[move.move_from].moved
+    if board.chessboard[move.move_to]!=0:
+        board.previous_piece = board.chessboard[move.move_to]
+
     board.passants.clear()
     chessboard = board.chessboard
     i = move.move_from
@@ -221,23 +231,27 @@ def make_move(board, move):
     piece = chessboard[i]
     chessboard[i] = 0
     if move.get_promotion() != 0:
+        board.previous_promotion = True
         chessboard[j] = Piece(move.get_promotion(), piece.colour)
         board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
         return
     if move.get_castle() != 0:
-        if move.get_castle() == 1:
+        if move.get_castle() == 1: #short
+            board.previous_castle = 1
             chessboard[j] = piece
             chessboard[j].moved = True
             chessboard[i + 1] = chessboard[i + 3]
             chessboard[i + 3] = 0
             chessboard[i + 1].moved = True
-        elif move.get_castle() == 2:
+        elif move.get_castle() == 2: #long
+            board.previous_castle = 2
             chessboard[j] = piece
             chessboard[j].moved = True
             chessboard[i - 1] = chessboard[i - 4]
             chessboard[i - 4] = 0
             chessboard[i - 1].moved = True
-        else:
+        else: #en passant
+            board.previous_passant_move = True
             which_colour = 1 if piece.colour == BLACK else -1
             chessboard[j-8*which_colour] = 0
 
@@ -247,12 +261,60 @@ def make_move(board, move):
         board.passants = move.get_passants()
     board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
 
+def unmake_move(board,move):
+    if move is None:
+        board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+        return
+    board.passants = board.previous_passants.copy()
+    board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+    i = move.move_from
+    j = move.move_to
+    chessboard = board.chessboard
+    moved_piece = chessboard[j]
+    if board.previous_castle == 1:
+        chessboard[i] = moved_piece
+        chessboard[i].moved = False
+        chessboard[i + 3] = chessboard[i + 1]
+        chessboard[i + 1] = 0
+        chessboard[i + 3].moved = False
+        chessboard[j]=0
+        return
+    if board.previous_castle == 2:
+        chessboard[i] = moved_piece
+        chessboard[i].moved = False
+        chessboard[i - 4] = chessboard[i - 1]
+        chessboard[i - 1] = 0
+        chessboard[i - 4].moved = False
+        chessboard[j]=0
+        return
+    if board.previous_promotion:
+        chessboard[j]=0
+        chessboard[i] = Piece(PAWN,board.who_to_move)
+        chessboard[i].moved = True
+        if board.previous_piece is not None:
+            chessboard[j] = board.previous_piece
+        return
+    if board.previous_passant_move:
+        chessboard[i] = chessboard[j]
+        chessboard[j]=0
+        which_colour = 1 if moved_piece.colour == BLACK else -1
+        chessboard[j-8*which_colour] = Piece(PAWN,BLACK if board.who_to_move == WHITE else WHITE)
+        return
+    if board.previous_piece is not None:
+        chessboard[i] = moved_piece
+        chessboard[j] = board.previous_piece
+        return
+    chessboard[i] = chessboard[j]
+    chessboard[j]=0
+    chessboard[i].moved = board.has_it_moved
+
 def islegal(board, move):
-    board_copy = copy.deepcopy(board)
-    make_move(board_copy, move)
-    for move in all_moves(board_copy,board_copy.who_to_move):
-        if king_capture(board_copy.chessboard, move):
+    make_move(board, move)
+    for movenext in all_moves(board,board.who_to_move):
+        if king_capture(board.chessboard, movenext):
+            unmake_move(board,move)
             return False
+    unmake_move(board, move)
     return True
 
 def insufficient_material(board):
