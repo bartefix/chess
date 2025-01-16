@@ -54,14 +54,13 @@ def calc_pawn(chessboard, move_from, piece):
         else:
             moves.add(Move(i, i + 8 * which_colour, promotion=QUEEN))
         if 0 <= i + 16 * which_colour < 64:
-            if chessboard[i + 16 * which_colour] == 0 and not piece.moved:
+            if chessboard[i + 16 * which_colour] == 0 and (int) (3.5-2.5*which_colour) == move_from[0]: # ingenious way of checking if on 2nd/7th rank
                 passants_to_add = set()
                 for capture in [15, 17]:
                     if 0 <= i + capture * which_colour < 64 and abs(i % 8 - (i + capture * which_colour) % 8) < 2:
                         if chessboard[i + capture * which_colour] != 0:
                             if chessboard[i + capture * which_colour].colour != piece.colour:
                                 passants_to_add.add(Move(i + capture*which_colour, i +which_colour*8,castle=3))
-
                 moves.add(Move(i, i + 16 * which_colour,enable_passant = passants_to_add))
     for capture in [7, 9]:
         if  0 <= i + capture * which_colour < 64 and abs(i%8 - (i+capture*which_colour)%8) < 2:
@@ -93,7 +92,7 @@ def calc_king(chessboard, move_from, piece):
                     moves.add(Move(i,i+2,castle=1))
             if chessboard[56] != 0:
                 if chessboard[57]==0 and chessboard[58]==0 and chessboard[59]==0 and not chessboard[56].moved:
-                    moves.add(Move(i,i-3,castle=2))
+                    moves.add(Move(i,i-2,castle=2))
         else:
             if chessboard[7] != 0:
                 if chessboard[5]==0 and chessboard[6]==0 and not chessboard[7].moved:
@@ -177,12 +176,11 @@ def calc_piece_help(board, move_from, piece):
         return calc_pawn(chessboard, move_from, piece)
 
 def calc_piece(board, move_from, piece):
-    passants = board.passants
     moves = calc_piece_help(board, move_from, piece)
     if piece.type != PAWN:
         return moves
     else:
-        for move in passants:
+        for move in board.passants:
             if move.getpair_from() == move_from:
                 moves.add(move)
         return moves
@@ -199,8 +197,9 @@ def all_moves(board, colour):
 def all_legal_moves(board, colour):
     moves = all_moves(board, colour)
     new_moves = set()
+    boardcopy = copy.deepcopy(board)
     for move in moves:
-        if islegal(board, move):
+        if islegal(boardcopy, move):
             new_moves.add(move)
     return new_moves
 
@@ -271,7 +270,7 @@ def unmake_move(board,move):
     j = move.move_to
     chessboard = board.chessboard
     moved_piece = chessboard[j]
-    if board.previous_castle == 1:
+    if move.get_castle() == 1:
         chessboard[i] = moved_piece
         chessboard[i].moved = False
         chessboard[i + 3] = chessboard[i + 1]
@@ -279,7 +278,7 @@ def unmake_move(board,move):
         chessboard[i + 3].moved = False
         chessboard[j]=0
         return
-    if board.previous_castle == 2:
+    if move.get_castle() == 2:
         chessboard[i] = moved_piece
         chessboard[i].moved = False
         chessboard[i - 4] = chessboard[i - 1]

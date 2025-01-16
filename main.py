@@ -130,6 +130,7 @@ def setup_game():
     move_piece_from = (-1, -1)
     available_moves = set()
     bot = Bot(board)
+
 if __name__ == "__main__":
     draw_board(board)
     window.blit(cached_background, (0, 0))
@@ -141,12 +142,11 @@ if __name__ == "__main__":
         clock.tick(FPS)
         for event in p.event.get():
             if first_turn:
-                bot.benchmark()
+                #bot.benchmark()
                 first_turn = False
             # if board.who_to_move == BLACK and state==PLAYING:
-            #     bot.benchmark()
             #     time.sleep(TIMEBETWEENMOVES)
-            #     move = bot.give_move()
+            #     move = bot.give_move(1)
             #     make_move(board, move)
             #     draw_board(board)
             #     window.blit(cached_background, (0, 0))
@@ -185,7 +185,6 @@ if __name__ == "__main__":
                     if event.key == pygame.K_LEFT:
                         if lastmove is not None:
                             unmake_move(board,lastmove)
-                        print("left clicked")
                         draw_board(board)
                         window.blit(cached_background, (0, 0))
                 if event.type == p.MOUSEBUTTONDOWN:
@@ -225,6 +224,7 @@ if __name__ == "__main__":
                     draw_board(board)
                     window.blit(cached_background, (0, 0))
                     state = isgameover(board)
+
         pygame.display.update()
         #print(int(clock.get_fps()))
     p.quit()

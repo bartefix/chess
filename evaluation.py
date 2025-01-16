@@ -11,23 +11,26 @@ def evaluate_position(board):
     return eval
 
 def search(board,depth):
-    isover = isgameover(board)
-    if isover == DRAW:
-        return 0.0
-    if isover== STALEMATE:
-        return 0.0
-    if isover == CHECKMATE: #the side whos turn it is is getting checkmated
-        return float('inf') if board.who_to_move == BLACK else float('-inf')
+
     if depth==0:
         return evaluate_position(board)
-    moves = all_legal_moves(board,board.who_to_move)
 
+    moves = all_legal_moves(board, board.who_to_move)
+    if len(moves) == 0:
+        if not islegal(board, None):
+            return float('inf') if board.who_to_move == BLACK else float('-inf')
+        else:
+            return 0.0
+    if insufficient_material(board):
+        return 0.0
+
+    board_copy = copy.deepcopy(board)
     if board.who_to_move==WHITE:
         best = float('-inf')
         for move in moves:
-            board_copy = copy.deepcopy(board)
             make_move(board_copy,move)
             eval = search(board_copy,depth-1)
+            unmake_move(board_copy,move)
             if eval > best:
                 best = eval
         return best
@@ -35,9 +38,9 @@ def search(board,depth):
     if board.who_to_move==BLACK:
         best = float('inf')
         for move in moves:
-            board_copy = copy.deepcopy(board)
             make_move(board_copy,move)
             eval = search(board_copy,depth-1)
+            unmake_move(board_copy, move)
             if eval < best:
                 best = eval
         return best
