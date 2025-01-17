@@ -29,13 +29,13 @@ class Board:
         self.passants = set()
         self.who_to_move = WHITE
         self.previous_piece = None
-        self.previous_castle = 0
         self.previous_passants = None
-        self.previous_promotion = False
         self.previous_passant_move = False
-        self.has_it_moved = False # had the piece that moved in previous move moved before: to maintain castling rights
-
+        self.castle_rights = [0,0,0,0]  # 0 - q, 1 - k, 2 - Q, 3 - K
+        self.prev_castle_rights = [0,0,0,0]
         self.load_fen(fenpositions[0])
+        self.king_in_check = False # This breaks when FEN loads with king already in check
+        self.prev_king_check = False
     def __getitem__(self, indices):
         if isinstance(indices, tuple):
             i,j = indices
@@ -75,23 +75,16 @@ class Board:
                     file_idx += 1
 
         self.who_to_move = WHITE if active_color == 'w' else BLACK
-        for i in range(64):
-            if self.chessboard[i]!=0:
-                if self.chessboard[i].type==KING:
-                    self.chessboard[i].moved = True
-        for char in castling:
-            if char == 'K':
-                self.chessboard[60].moved = False  # White King
-                self.chessboard[63].moved = False  # White Kingside Rook
-            elif char == 'Q':
-                self.chessboard[60].moved = False  # White King
-                self.chessboard[56].moved = False  # White Queenside Rook
-            elif char == 'k':
-                self.chessboard[4].moved = False  # Black King
-                self.chessboard[7].moved = False  # Black Kingside Rook
+
+        for char in castling: # 0 - q, 1 - k, 2 - Q, 3 - K
+            if char == 'k':
+                self.castle_rights[1]=1
             elif char == 'q':
-                self.chessboard[4].moved = False  # Black King
-                self.chessboard[0].moved = False  # Black Queenside Rook
+                self.castle_rights[0]=1
+            elif char == 'K':
+                self.castle_rights[3]=1
+            elif char == 'Q':
+                self.castle_rights[2]=1
 
         # Parse en passant
         if en_passant != '-':

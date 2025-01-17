@@ -12,18 +12,22 @@ def evaluate_position(board):
 
 def search(board,depth):
 
-    if depth==0:
-        return evaluate_position(board)
+    if board.king_in_check:
+        moves = all_legal_moves(board, board.who_to_move)
+        if len(moves) == 0:
+            if not islegal(board, None):
+                return float('inf') if board.who_to_move == BLACK else float('-inf')
+            else:
+                return 0.0
+    else: moves = None
 
-    moves = all_legal_moves(board, board.who_to_move)
-    if len(moves) == 0:
-        if not islegal(board, None):
-            return float('inf') if board.who_to_move == BLACK else float('-inf')
-        else:
-            return 0.0
     if insufficient_material(board):
         return 0.0
 
+    if depth==0:
+        return evaluate_position(board)
+    if moves is None:
+        moves = all_legal_moves(board, board.who_to_move)
     board_copy = copy.deepcopy(board)
     if board.who_to_move==WHITE:
         best = float('-inf')
@@ -50,6 +54,8 @@ def count_positions(board,depth):
         return 1
     boardcopy = copy.deepcopy(board)
     moves = all_legal_moves(boardcopy,boardcopy.who_to_move)
+    if depth==1:
+        return len(moves)
     numpos = 0
     for move in moves:
         make_move(boardcopy, move)

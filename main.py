@@ -138,23 +138,23 @@ if __name__ == "__main__":
         clock.tick(FPS)
         for event in p.event.get():
             if first_turn:
-                # for depth in range(5):
-                #     start_time = time.perf_counter()
-                #     count = count_positions(board, depth)
-                #     end_time = time.perf_counter()
-                #     elapsed_time = end_time - start_time
-                #     print(
-                #         f" Move: {count}, True value: {fenpositions_true_values[2][depth]}, Elapsed time: {elapsed_time:.6f} seconds")
+                # bot.benchmark(4,0)
+                # print(count_positions(board, 2))
                 first_turn = False
-            # if board.who_to_move == BLACK and state==PLAYING:
-            #     time.sleep(TIMEBETWEENMOVES)
-            #     move = bot.give_move(1)
-            #     make_move(board, move)
-            #     draw_board(board)
-            #     window.blit(cached_background, (0, 0))
-            #     state = isgameover(board)
-            #     pygame.display.update()
-            #     continue
+            if board.who_to_move == BLACK and state==PLAYING:
+                time.sleep(TIMEBETWEENMOVES)
+
+                start_time = time.perf_counter()
+                move = bot.give_move(2)
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                print(f"Elapsed time: {elapsed_time:.6f} seconds")
+                make_move(board, move)
+                draw_board(board)
+                window.blit(cached_background, (0, 0))
+                state = isgameover(board)
+                pygame.display.update()
+                continue
 
             # if board.who_to_move == WHITE and state==PLAYING:
             #     time.sleep(TIMEBETWEENMOVES)
