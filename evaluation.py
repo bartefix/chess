@@ -47,14 +47,17 @@ def search(board,depth):
 
 def count_positions(board,depth):
     if depth==0:
-        return 1;
-    moves = all_legal_moves(board,board.who_to_move)
-    numpos = 0
+        return 1
     boardcopy = copy.deepcopy(board)
+    moves = all_legal_moves(boardcopy,boardcopy.who_to_move)
+    numpos = 0
     for move in moves:
-        make_move(boardcopy,move)
-        numpos += count_positions(boardcopy,depth-1)
-        unmake_move(boardcopy,move)
+        make_move(boardcopy, move)
+        a = count_positions(boardcopy, depth - 1)
+        numpos+=a
+        unmake_move(boardcopy, move)
+        # if depth==3:
+        #     print(f"{move.get_stockfish_format()}: {a}")
     return numpos
 
 piece_value = [-1,20000,900,500,300,300,100]

@@ -4,6 +4,7 @@ import pygame
 import pygame as p
 from constants import *
 from board import Board
+from evaluation import count_positions
 from moves import *
 from Bot import Bot
 import time
@@ -67,8 +68,11 @@ def draw_board(board):
 def retrieve_move(moves, move_from, move_to):
     temp_move = Move(move_from, move_to)
     for move in moves:
-        if move == temp_move:
-            return move
+        if move.move_to == temp_move.move_to and move.move_from == temp_move.move_from:
+            if move.get_promotion()==0:
+                return move
+            if move.get_promotion()==QUEEN:
+                return move
     return None
 
 
@@ -76,21 +80,13 @@ def valid_move(board, coords, move_from, piece, who):
     if piece.colour != who:
         return None
     moves = calc_piece(board, move_from, piece)
-    new_moves = set()
-    for move in moves:
-        if islegal(board, move):
-            new_moves.add(move)
+    new_moves = all_legal_piece_moves(board, move_from, selected_piece)
     return retrieve_move(new_moves, move_from, coords)
 
-def valid_moves(board,move_piece_from, selected_piece):
+def valid_moves(board,move_from, selected_piece):
     if selected_piece.colour != board.who_to_move:
         return set()
-    moves = calc_piece(board, move_piece_from, selected_piece)
-    new_moves = set()
-    for move in moves:
-        if islegal(board,move):
-            new_moves.add(move)
-    return new_moves
+    return all_legal_piece_moves(board, move_from, selected_piece)
 
 def draw_moves(moves):
     for move in moves:
@@ -142,7 +138,13 @@ if __name__ == "__main__":
         clock.tick(FPS)
         for event in p.event.get():
             if first_turn:
-                #bot.benchmark()
+                # for depth in range(5):
+                #     start_time = time.perf_counter()
+                #     count = count_positions(board, depth)
+                #     end_time = time.perf_counter()
+                #     elapsed_time = end_time - start_time
+                #     print(
+                #         f" Move: {count}, True value: {fenpositions_true_values[2][depth]}, Elapsed time: {elapsed_time:.6f} seconds")
                 first_turn = False
             # if board.who_to_move == BLACK and state==PLAYING:
             #     time.sleep(TIMEBETWEENMOVES)

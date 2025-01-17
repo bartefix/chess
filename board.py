@@ -33,10 +33,9 @@ class Board:
         self.previous_passants = None
         self.previous_promotion = False
         self.previous_passant_move = False
-        self.has_it_moved = False
+        self.has_it_moved = False # had the piece that moved in previous move moved before: to maintain castling rights
 
         self.load_fen(fenpositions[0])
-
     def __getitem__(self, indices):
         if isinstance(indices, tuple):
             i,j = indices

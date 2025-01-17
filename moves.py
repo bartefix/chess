@@ -19,13 +19,18 @@ class Move:
         self.castle = castle  # 0 - not a castle move, 1 short castle, 2 long castle, 3 en passant
         self.enable_passant = enable_passant # set of en passant moves for next turn
 
+
+
+    '''
+    theres an uncaught bug where a (possibly) queen move adds two identical moves to the set. This solves the issue 
+    '''
     def __eq__(self, other):
         if not isinstance(other, Move):
             return False
-        return self.move_from == other.move_from and self.move_to == other.move_to
+        return (self.move_from, self.move_to, self.promotion, self.castle, self.enable_passant) == (other.move_from, other.move_to, other.promotion,other.castle,other.enable_passant)
 
     def __hash__(self):
-        return hash((self.move_from, self.move_to))
+        return hash((self.move_from, self.move_to, self.promotion, self.castle))
 
     def getpair_from(self):
         i = floor(self.move_from / 8)
@@ -43,7 +48,16 @@ class Move:
         return self.castle
     def get_passants(self):
         return self.enable_passant
-
+    def get_stockfish_format(self):
+        row,col = self.getpair_from()
+        file = chr(ord('a') + col)  # Convert column index to letter
+        rank = str(8 - row)  # Convert row index to rank (8 to 1)
+        letterfrom = file + rank
+        row, col = self.getpair_to()
+        file = chr(ord('a') + col)  # Convert column index to letter
+        rank = str(8 - row)  # Convert row index to rank (8 to 1)
+        letterto = file + rank
+        return letterfrom+letterto
 def calc_pawn(chessboard, move_from, piece):
     i = move_from[0] * 8 + move_from[1]
     moves = set()
@@ -53,6 +67,9 @@ def calc_pawn(chessboard, move_from, piece):
             moves.add(Move(i, i + 8 * which_colour))
         else:
             moves.add(Move(i, i + 8 * which_colour, promotion=QUEEN))
+            moves.add(Move(i, i + 8 * which_colour, promotion=ROOK))
+            moves.add(Move(i, i + 8 * which_colour, promotion=KNIGHT))
+            moves.add(Move(i, i + 8 * which_colour, promotion=BISHOP))
         if 0 <= i + 16 * which_colour < 64:
             if chessboard[i + 16 * which_colour] == 0 and (int) (3.5-2.5*which_colour) == move_from[0]: # ingenious way of checking if on 2nd/7th rank
                 passants_to_add = set()
@@ -70,6 +87,9 @@ def calc_pawn(chessboard, move_from, piece):
                         moves.add(Move(i, i + capture * which_colour))
                     else:
                         moves.add(Move(i, i + capture * which_colour,promotion=QUEEN))
+                        moves.add(Move(i, i + capture * which_colour, promotion=BISHOP))
+                        moves.add(Move(i, i + capture * which_colour, promotion=ROOK))
+                        moves.add(Move(i, i + capture * which_colour, promotion=KNIGHT))
     return moves
 
 
@@ -195,14 +215,45 @@ def all_moves(board, colour):
     return moves
 
 def all_legal_moves(board, colour):
-    moves = all_moves(board, colour)
+
+    new_moves = set()
+    boardcopy = copy.deepcopy(board)
+    moves = all_moves(boardcopy, colour)
+    for move in moves:
+        if move.get_castle() == 1:
+            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from + 1):
+            #     continue
+            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from + 1))):
+                continue
+        if move.get_castle() == 2:
+            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from - 1):
+            #     continue
+            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from - 1))):
+                continue
+        if not islegal(boardcopy, move):
+            continue
+        new_moves.add(move)
+    return new_moves
+
+def all_legal_piece_moves(board, move_from,piece):
+    moves = calc_piece(board, move_from, piece)
     new_moves = set()
     boardcopy = copy.deepcopy(board)
     for move in moves:
-        if islegal(boardcopy, move):
-            new_moves.add(move)
+        if move.get_castle() == 1:
+            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from + 1):
+            #     continue
+            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from,move.move_from+1))):
+                continue
+        if move.get_castle() == 2:
+            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from - 1):
+            #     continue
+            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from,move.move_from-1))):
+                continue
+        if not islegal(boardcopy, move):
+            continue
+        new_moves.add(move)
     return new_moves
-
 def king_capture(chessboard, move):
     if chessboard[move.move_to] != 0: # this is single index format
         if chessboard[move.move_to].type == KING:
@@ -289,7 +340,7 @@ def unmake_move(board,move):
     if board.previous_promotion:
         chessboard[j]=0
         chessboard[i] = Piece(PAWN,board.who_to_move)
-        chessboard[i].moved = True
+        chessboard[i].moved = board.has_it_moved
         if board.previous_piece is not None:
             chessboard[j] = board.previous_piece
         return
@@ -298,9 +349,12 @@ def unmake_move(board,move):
         chessboard[j]=0
         which_colour = 1 if moved_piece.colour == BLACK else -1
         chessboard[j-8*which_colour] = Piece(PAWN,BLACK if board.who_to_move == WHITE else WHITE)
+        chessboard[j - 8 * which_colour].moved = True
+        chessboard[i].moved = board.has_it_moved
         return
     if board.previous_piece is not None:
         chessboard[i] = moved_piece
+        chessboard[i].moved = board.has_it_moved
         chessboard[j] = board.previous_piece
         return
     chessboard[i] = chessboard[j]
@@ -315,6 +369,14 @@ def islegal(board, move):
             return False
     unmake_move(board, move)
     return True
+def is_square_attacked(board, index):
+    who_to_move = WHITE if board.who_to_move == BLACK else BLACK
+    moves = all_moves(board,who_to_move)
+    for move in moves:
+        if move.move_to == index:
+            return True
+
+    return False
 
 def insufficient_material(board):
     chessboard = board.chessboard

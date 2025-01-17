@@ -45,16 +45,17 @@ class Bot:
             print(evaluate_position(self.board))
             return best_move
 
-    def benchmark(self):
-        for i in range(3):
-            start_time = time.perf_counter()
-            count = count_positions(self.board,i+1)
-            end_time = time.perf_counter()
-            elapsed_time = end_time - start_time
-            print(f" Move: {count}, Elapsed time: {elapsed_time:.6f} seconds")
-        # for i in range(3):
-        #     start_time = time.perf_counter()
-        #     search(self.board,i)
-        #     end_time = time.perf_counter()
-        #     elapsed_time = end_time - start_time
-        #     print(f"Elapsed time: {elapsed_time:.6f} seconds")
+    def benchmark(self,_depth, package): # package is index under which the position package is
+        total_time = [0] * _depth        # second index is for positions or their evaluations
+        for i in range(len(positions_package[package][0])):
+            for depth in range(_depth):
+                self.board.load_fen(positions_package[package][0][i])
+                start_time = time.perf_counter()
+                count = count_positions(self.board,depth)
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                total_time[depth] += elapsed_time
+                print(f" Move: {count}, True value: {positions_package[package][1][i][depth]}, Elapsed time: {elapsed_time:.6f} seconds")
+            print("\n")
+        print(f" Total time: {total_time}")
+
