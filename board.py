@@ -1,6 +1,6 @@
 from constants import *
 from pieces import *
-
+from attackSquares import calculate_attack_squares
 
 class Board:
     def __init__(self):
@@ -33,9 +33,18 @@ class Board:
         self.previous_passant_move = False
         self.castle_rights = [0,0,0,0]  # 0 - q, 1 - k, 2 - Q, 3 - K
         self.prev_castle_rights = [0,0,0,0]
+
+        self.attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
+        self.previous_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
+
         self.load_fen(fenpositions[0])
-        self.king_in_check = False # This breaks when FEN loads with king already in check
-        self.prev_king_check = False
+
+    def print_board(self):
+        for idx, squares in enumerate(self.attack_squares):
+            print(f"Board {idx + 1}:")
+            for row in range(8):
+                print(squares[row * 8:(row + 1) * 8])  # Slicing each row
+            print()  # Blank line between boards
     def __getitem__(self, indices):
         if isinstance(indices, tuple):
             i,j = indices
@@ -50,6 +59,22 @@ class Board:
         else:
             raise TypeError("bad")
 
+    def is_king_checked(self):
+        index = 1 if self.who_to_move == WHITE else 0
+        for i in range(64):
+            if self.chessboard[i] != 0:
+                if self.chessboard[i].type == KING:
+                    if self.chessboard[i].colour == self.who_to_move:
+                        if self.attack_squares[index][i]==1:
+                            return True
+        return False
+    def get_king_position(self):
+        for i in range(64):
+            if self.chessboard[i] != 0:
+                if self.chessboard[i].type == KING:
+                    if self.chessboard[i].colour == self.who_to_move:
+                            return i
+        return -1
     def load_fen(self, fen):
 
         self.chessboard = [0 for x in range(64)]
@@ -89,5 +114,7 @@ class Board:
         # Parse en passant
         if en_passant != '-':
             pass
+        calculate_attack_squares(self,WHITE)
+        calculate_attack_squares(self, BLACK)
 
 

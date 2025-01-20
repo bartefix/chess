@@ -1,10 +1,9 @@
-from math import floor
 
 import pygame
 import pygame as p
 from constants import *
 from board import Board
-from evaluation import count_positions
+from evaluation import count_positions, evaluate_position
 from moves import *
 from Bot import Bot
 import time
@@ -57,6 +56,19 @@ def draw_board(board):
 
     cached_background = p.Surface((WIDTH, HEIGHT))  # Create a new cached surface
     cached_background.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))  # Draw the board
+
+    # for i in range(8):
+    #     for j in range(8):
+    #         x = j * BLOCK
+    #         y = i * BLOCK
+    #
+    #         # Highlight squares attacked by white
+    #         if board.attack_squares[0][i*8+j] == 1:
+    #             p.draw.rect(cached_background, (255, 255, 0, 100), (x, y, BLOCK, BLOCK))  # Yellow color
+    #
+    #         # Highlight squares attacked by black
+    #         if board.attack_squares[1][i*8+j] == 1:
+    #             p.draw.rect(cached_background, (0, 0, 255, 100), (x, y, BLOCK, BLOCK))  # Blue color
 
     #window.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))
     for i in range(8):
@@ -139,7 +151,11 @@ if __name__ == "__main__":
         for event in p.event.get():
             if first_turn:
                 # bot.benchmark(4,0)
-                # print(count_positions(board, 2))
+                #print(count_positions(board, 2))
+                # calculate_attack_squares(board,WHITE)
+                # calculate_attack_squares(board, BLACK)
+                # print(board.white_attacks)
+                # print(board.black_attacks)
                 first_turn = False
             if board.who_to_move == BLACK and state==PLAYING:
                 time.sleep(TIMEBETWEENMOVES)
@@ -154,6 +170,7 @@ if __name__ == "__main__":
                 window.blit(cached_background, (0, 0))
                 state = isgameover(board)
                 pygame.display.update()
+                print(evaluate_position(board))
                 continue
 
             # if board.who_to_move == WHITE and state==PLAYING:
@@ -219,6 +236,8 @@ if __name__ == "__main__":
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
                         lastmove = move
+                        # print(evaluate_position(board))
+                        # board.print_board()
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
                     selected_piece = 0

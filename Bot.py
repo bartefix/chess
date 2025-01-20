@@ -27,10 +27,10 @@ class Bot:
                 make_move(copy_board,moves_list[i])
                 eval = search(copy_board,depth)
                 unmake_move(copy_board,moves_list[i])
-                if eval > best_eval:
+                if eval >= best_eval:
                     best_eval = eval
                     best_move = moves_list[i]
-            print(evaluate_position(self.board))
+            #print(evaluate_position(self.board))
             return best_move
         if self.board.who_to_move == BLACK:
             best_eval = float("inf")
@@ -39,10 +39,10 @@ class Bot:
                 make_move(copy_board, moves_list[i])
                 eval = search(copy_board,depth)
                 unmake_move(copy_board, moves_list[i])
-                if eval < best_eval:
+                if eval <= best_eval:
                     best_eval = eval
                     best_move = moves_list[i]
-            print(evaluate_position(self.board))
+            #print(evaluate_position(self.board))
             return best_move
 
     def benchmark(self,_depth, package): # package is index under which the position package is

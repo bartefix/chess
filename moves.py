@@ -1,64 +1,7 @@
-from math import floor
-
-from pieces import *
 from board import *
 import copy
-
-class Move:
-    def __init__(self, move_from, move_to, promotion=0, castle=0, enable_passant=None, prevents_castle=None):
-        # parameters passed either both as pairs or both as integers
-        if prevents_castle is None:
-            prevents_castle = [1, 1, 1, 1]
-        if enable_passant is None:
-            enable_passant = set()
-        if isinstance(move_from, tuple):
-            self.move_from = 8 * move_from[0] + move_from[1]
-            self.move_to = 8 * move_to[0] + move_to[1]
-        else:
-            self.move_from = move_from
-            self.move_to = move_to
-        self.promotion = promotion  # 0 - no promotion, else - the piece to promote to
-        self.castle = castle  # 0 - not a castle move, 1 short castle, 2 long castle, 3 en passant
-        self.prevents_castle = prevents_castle # values to be and-ed with
-        self.enable_passant = enable_passant # set of en passant moves for next turn
-
-    '''
-    theres an uncaught bug where a (possibly) queen move adds two identical moves to the set. This solves the issue 
-    '''
-    def __eq__(self, other):
-        if not isinstance(other, Move):
-            return False
-        return (self.move_from, self.move_to, self.promotion, self.castle, self.enable_passant) == (other.move_from, other.move_to, other.promotion,other.castle,other.enable_passant)
-
-    def __hash__(self):
-        return hash((self.move_from, self.move_to, self.promotion, self.castle))
-
-    def getpair_from(self):
-        i = floor(self.move_from / 8)
-        j = self.move_from % 8
-        return (i, j)
-
-    def getpair_to(self):
-        i = floor(self.move_to / 8)
-        j = self.move_to % 8
-        return (i, j)
-
-    def get_promotion(self):
-        return self.promotion
-    def get_castle(self):
-        return self.castle
-    def get_passants(self):
-        return self.enable_passant
-    def get_stockfish_format(self):
-        row,col = self.getpair_from()
-        file = chr(ord('a') + col)  # Convert column index to letter
-        rank = str(8 - row)  # Convert row index to rank (8 to 1)
-        letterfrom = file + rank
-        row, col = self.getpair_to()
-        file = chr(ord('a') + col)  # Convert column index to letter
-        rank = str(8 - row)  # Convert row index to rank (8 to 1)
-        letterto = file + rank
-        return letterfrom+letterto
+from attackSquares import *
+from Move import Move
 def calc_pawn(chessboard, move_from, piece):
     i = move_from[0] * 8 + move_from[1]
     moves = set()
@@ -223,11 +166,50 @@ def all_moves(board, colour):
                     moves = moves | calc_piece(board,(i,j),board[i,j])
     return moves
 
-def all_legal_moves(board, colour):
+def pinned_pieces(board, colour,king_position):
+    squares = {}
+    i = king_position
+    chessboard = board.chessboard
+    offsets = [-8, -1, 1, 8]
+    for offset in offsets:
+        offset_add = offset
+        pinned_piece_position = -1
+        while 0 <= i + offset < 64 and (i % 8 - (i + offset) % 8) * (floor(i / 8) - floor((i + offset) / 8)) == 0:
+            if chessboard[i+offset] != 0:
+                if chessboard[i+offset].colour != colour and (chessboard[i+offset].type ==QUEEN or chessboard[i+offset].type == ROOK):
+                    if pinned_piece_position != -1:
+                        squares[pinned_piece_position]=abs(offset_add)
+                        break
+                else:
+                    if pinned_piece_position == -1:
+                        pinned_piece_position = i+offset
+                    else:
+                        break
+            offset += offset_add
+    offsets = [-9, -7, 7, 9]
+    for offset in offsets:
+        offset_add = offset
+        pinned_piece_position = -1
+        while 0 <= i + offset < 64 and abs(i % 8 - (i + offset) % 8) == abs(floor(i / 8) - floor((i + offset) / 8)):
+            if chessboard[i + offset] != 0:
+                if chessboard[i + offset].colour != colour and (chessboard[i+offset].type ==QUEEN or chessboard[i+offset].type == BISHOP):
+                    if pinned_piece_position != -1:
+                        squares[pinned_piece_position]=abs(offset_add)
+                        break
+                else:
+                    if pinned_piece_position == -1:
+                        pinned_piece_position = i + offset
+                    else:
+                        break
+            offset += offset_add
+    return squares
 
+def all_legal_moves(board, colour):
+    index = 1 if colour == WHITE else 0
     new_moves = set()
     boardcopy = copy.deepcopy(board)
     moves = all_moves(boardcopy, colour)
+    pinned = pinned_pieces(boardcopy, colour,board.get_king_position())
     for move in moves:
         if move.get_castle() == 1:
             offset = 3 if colour == WHITE else 1
@@ -245,16 +227,44 @@ def all_legal_moves(board, colour):
             #     continue
             if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from - 1))):
                 continue
+
+        if not (board.is_king_checked() or move.get_castle()==3):
+            if move.move_from in pinned:
+                if not is_pinned_move_legal(move.getpair_from(),move.getpair_to(),pinned[move.move_from]):
+                    continue
+            if board[move.getpair_from()].type==KING and board.attack_squares[index][move.move_to]==1:
+                continue
+            new_moves.add(move)
+            continue
         if not islegal(boardcopy, move):
             continue
         new_moves.add(move)
     return new_moves
 
+def is_pinned_move_legal(pair_from,pair_to,offset):
+    i1,j1 = pair_from
+    i2,j2 = pair_to
+
+    if offset==1:
+        if i1==i2: return True
+        else: return False
+    if offset==7:
+        if (i1-i2)==(j2-j1):return True
+        else: return False
+    if offset==8:
+        if j1==j2: return True
+        else: return False
+    if offset==9:
+        if (i1-i2)==(j1-j2):return True
+        else: return False
+
 def all_legal_piece_moves(board, move_from,piece):
+    index = 1 if piece.colour == WHITE else 0
     moves = calc_piece(board, move_from, piece)
     new_moves = set()
     boardcopy = copy.deepcopy(board)
     colour= piece.colour
+    pinned = pinned_pieces(boardcopy, colour,board.get_king_position())
     for move in moves:
         if move.get_castle() == 1:
             offset = 3 if colour == WHITE else 1
@@ -272,6 +282,14 @@ def all_legal_piece_moves(board, move_from,piece):
             #     continue
             if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from - 1))):
                 continue
+        if not (board.is_king_checked() or move.get_castle() == 3):
+            if move.move_from in pinned:
+                if not is_pinned_move_legal(move.getpair_from(), move.getpair_to(), pinned[move.move_from]):
+                    continue
+            if board[move.getpair_from()].type == KING and board.attack_squares[index][move.move_to] == 1:
+                continue
+            new_moves.add(move)
+            continue
         if not islegal(boardcopy, move):
             continue
         new_moves.add(move)
@@ -286,12 +304,11 @@ def make_move(board, move):
     if move is None:
         board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
         return
-    board.prev_king_check = board.king_in_check
     board.previous_passants = board.passants.copy()
     board.previous_piece = None
     board.previous_passant_move = False
     board.prev_castle_rights = board.castle_rights.copy()
-    board.king_in_check = False
+    board.previous_attack_squares = board.attack_squares.copy()
     if board.chessboard[move.move_to]!=0:
         board.previous_piece = board.chessboard[move.move_to]
         if board.chessboard[move.move_to].type == KING:
@@ -316,6 +333,10 @@ def make_move(board, move):
     if move.get_promotion() != 0:
         chessboard[j] = Piece(move.get_promotion(), piece.colour)
         board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+        if board.who_to_move==BLACK:
+            calculate_attack_squares(board, WHITE)
+        else:
+            calculate_attack_squares(board, BLACK)
         return
     if move.get_castle() != 0:
         if move.get_castle() == 1: #short
@@ -335,14 +356,18 @@ def make_move(board, move):
     if len(move.enable_passant) > 0:
         board.passants = move.get_passants()
     board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+    if board.who_to_move == BLACK:
+        calculate_attack_squares(board, WHITE)
+    else:
+        calculate_attack_squares(board, BLACK)
 
 def unmake_move(board,move):
     if move is None:
         board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
         return
-    board.king_in_check = board.prev_king_check
     board.passants = board.previous_passants.copy()
     board.castle_rights = board.prev_castle_rights.copy()
+    board.attack_squares = board.previous_attack_squares.copy()
     board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
     i = move.move_from
     j = move.move_to
