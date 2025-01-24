@@ -5,8 +5,8 @@ from Move import Move
 
 
 '''
-Attacked squares differ from calculating moves in that we can attack squares with pieces of our colour, 
-furthermore it requieres much less computation so it is more efficient to write another set of functions
+Attacked squares differ from calculating moves because we can attack squares with pieces of our colour.
+It also requieres much less computation so it is more efficient to write another set of functions
 '''
 
 def calc_pawn_attacksquares(chessboard, i, piece,attack_squares):
@@ -19,7 +19,7 @@ def calc_pawn_attacksquares(chessboard, i, piece,attack_squares):
 def calc_king_attacksquares(chessboard, i, piece,attack_squares):
     offsets = [-9, -8, -7, -1, 1, 7, 8, 9]
     for offset in offsets:
-        if 0 <= i + offset < 64 and abs(i % 8 - (  # previously i % 8 - (i + offset) % 8
+        if 0 <= i + offset < 64 and abs(i % 8 - (
                 i + offset) % 8) <= 1:  # checking if the distance in x axes is at most 1, prevents out of bounds
             attack_squares[i + offset]=1
 
@@ -82,3 +82,37 @@ def calculate_attack_squares(board,colour):
                 if board.chessboard[i].colour == colour:
                     calc_attacks_help(board, i, board.chessboard[i],board.attack_squares[index])
 
+def squares_between(): #preprocessing squares between every two squares to quickly find if we can block check
+    arr = [[[] for _ in range(64)] for _ in range(64)]
+
+    for sq1 in range(64):
+        for sq2 in range(64):
+
+            rank1, file1 = divmod(sq1, 8)
+            rank2, file2 = divmod(sq2, 8)
+
+            between = []
+
+            if rank1 == rank2:
+                if abs(file1 - file2) > 1:
+                    start, end = sorted((file1, file2))
+                    between = [rank1 * 8 + f for f in range(start + 1, end)]
+
+            elif file1 == file2:
+                if abs(rank1 - rank2) > 1:
+                    start, end = sorted((rank1, rank2))
+                    between = [r * 8 + file1 for r in range(start + 1, end)]
+
+            elif abs(rank1 - rank2) == abs(file1 - file2):
+                rank_step = 1 if rank2 > rank1 else -1
+                file_step = 1 if file2 > file1 else -1
+
+                for step in range(1, abs(rank1 - rank2)):
+                    r = rank1 + step * rank_step
+                    f = file1 + step * file_step
+                    between.append(r * 8 + f)
+
+            arr[sq1][sq2] = between
+
+    return arr
+arr = squares_between()

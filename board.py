@@ -1,3 +1,5 @@
+import copy
+
 from constants import *
 from pieces import *
 from attackSquares import calculate_attack_squares
@@ -33,18 +35,18 @@ class Board:
         self.previous_passant_move = False
         self.castle_rights = [0,0,0,0]  # 0 - q, 1 - k, 2 - Q, 3 - K
         self.prev_castle_rights = [0,0,0,0]
-
-        self.attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
+        self.king_pos = [4,60] # 1 - white, 0 - black
+        self.prev_king_pos = [4,60]
+        self.attack_squares = [[0 for x in range(64)],[0 for x in range(64)]] # 1 - white, 0 - black
         self.previous_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
-
         self.load_fen(fenpositions[0])
 
     def print_board(self):
         for idx, squares in enumerate(self.attack_squares):
             print(f"Board {idx + 1}:")
             for row in range(8):
-                print(squares[row * 8:(row + 1) * 8])  # Slicing each row
-            print()  # Blank line between boards
+                print(squares[row * 8:(row + 1) * 8])
+            print()
     def __getitem__(self, indices):
         if isinstance(indices, tuple):
             i,j = indices
@@ -61,20 +63,13 @@ class Board:
 
     def is_king_checked(self):
         index = 1 if self.who_to_move == WHITE else 0
-        for i in range(64):
-            if self.chessboard[i] != 0:
-                if self.chessboard[i].type == KING:
-                    if self.chessboard[i].colour == self.who_to_move:
-                        if self.attack_squares[index][i]==1:
-                            return True
-        return False
+       # print(self.king_pos)
+        return self.attack_squares[index][self.king_pos[index]]
+
     def get_king_position(self):
-        for i in range(64):
-            if self.chessboard[i] != 0:
-                if self.chessboard[i].type == KING:
-                    if self.chessboard[i].colour == self.who_to_move:
-                            return i
-        return -1
+        index = 1 if self.who_to_move == WHITE else 0
+        return self.king_pos[index]
+
     def load_fen(self, fen):
 
         self.chessboard = [0 for x in range(64)]
@@ -111,10 +106,25 @@ class Board:
             elif char == 'Q':
                 self.castle_rights[2]=1
 
-        # Parse en passant
+        # Parse en passant - not implemented
         if en_passant != '-':
             pass
         calculate_attack_squares(self,WHITE)
         calculate_attack_squares(self, BLACK)
 
+        for i in range(64):
+            if self.chessboard[i] != 0:
+                if self.chessboard[i].type == KING:
+                    if self.chessboard[i].colour == WHITE:
+                        self.king_pos[1]=i
+                    else:
+                        self.king_pos[0]=i
 
+
+    def copy(self):
+        boardcopy = copy.copy(self)
+        boardcopy.king_pos = self.king_pos.copy()
+        boardcopy.prev_king_pos = self.prev_king_pos.copy()
+        boardcopy.castle_rights = self.castle_rights.copy()
+        boardcopy.prev_castle_rights = self.prev_castle_rights.copy()
+        return boardcopy

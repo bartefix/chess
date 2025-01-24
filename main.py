@@ -1,3 +1,4 @@
+import copy
 
 import pygame
 import pygame as p
@@ -65,12 +66,11 @@ def draw_board(board):
     #         # Highlight squares attacked by white
     #         if board.attack_squares[0][i*8+j] == 1:
     #             p.draw.rect(cached_background, (255, 255, 0, 100), (x, y, BLOCK, BLOCK))  # Yellow color
-    #
-    #         # Highlight squares attacked by black
+    #         # # Highlight squares attacked by black
     #         if board.attack_squares[1][i*8+j] == 1:
     #             p.draw.rect(cached_background, (0, 0, 255, 100), (x, y, BLOCK, BLOCK))  # Blue color
 
-    #window.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))
+    window.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))
     for i in range(8):
         for j in range(8):
             if board[i, j] != 0 and not move_piece_from == (i,j):
@@ -87,18 +87,18 @@ def retrieve_move(moves, move_from, move_to):
                 return move
     return None
 
-
 def valid_move(board, coords, move_from, piece, who):
     if piece.colour != who:
         return None
-    moves = calc_piece(board, move_from, piece)
-    new_moves = all_legal_piece_moves(board, move_from, selected_piece)
+    boardcopy = copy.deepcopy(board)
+    new_moves = all_legal_piece_moves(boardcopy, move_from, selected_piece)
     return retrieve_move(new_moves, move_from, coords)
 
 def valid_moves(board,move_from, selected_piece):
     if selected_piece.colour != board.who_to_move:
         return set()
-    return all_legal_piece_moves(board, move_from, selected_piece)
+    boardcopy = copy.deepcopy(board)
+    return all_legal_piece_moves(boardcopy, move_from, selected_piece)
 
 def draw_moves(moves):
     for move in moves:
@@ -172,10 +172,10 @@ if __name__ == "__main__":
                 pygame.display.update()
                 print(evaluate_position(board))
                 continue
-
+            #
             # if board.who_to_move == WHITE and state==PLAYING:
             #     time.sleep(TIMEBETWEENMOVES)
-            #     move = bot.give_move()
+            #     move = bot.give_move(1)
             #     make_move(board, move)
             #     draw_board(board)
             #     window.blit(cached_background, (0, 0))
@@ -184,7 +184,9 @@ if __name__ == "__main__":
             #     continue
 
             if state != PLAYING:
+                pass
                 draw_board(board)
+                window.blit(cached_background, (0, 0))
                 draw_button()
                 pygame.display.update()
                 if event.type == p.QUIT:
@@ -238,6 +240,7 @@ if __name__ == "__main__":
                         lastmove = move
                         # print(evaluate_position(board))
                         # board.print_board()
+                        #print(board.king_pos)
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
                     selected_piece = 0
@@ -247,5 +250,4 @@ if __name__ == "__main__":
                     state = isgameover(board)
 
         pygame.display.update()
-        #print(int(clock.get_fps()))
     p.quit()

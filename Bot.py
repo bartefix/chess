@@ -15,7 +15,6 @@ class Bot:
         moves_list = list(moves)
 
         depth = _depth
-
         n = len(moves)
         #colour_modifier = 1 if self.board.who_to_move == WHITE else -1
 
@@ -57,5 +56,6 @@ class Bot:
                 total_time[depth] += elapsed_time
                 print(f" Move: {count}, True value: {positions_package[package][1][i][depth]}, Elapsed time: {elapsed_time:.6f} seconds")
             print("\n")
-        print(f" Total time: {total_time}")
+        formatted_total_time = [f"{time:.6f}" for time in total_time]
+        print(f" Total time: {formatted_total_time}")
 

@@ -51,22 +51,29 @@ def calc_king(chessboard, move_from, piece):
             else:
                 moves.add(Move(i, i + offset,prevents_castle=prevents_castling))
 
-    if piece.colour == WHITE and i==60:
-        if chessboard[63]!=0: #White short castle
-            if chessboard[61]==0 and chessboard[62]==0:
-                moves.add(Move(i,i+2,castle=1,prevents_castle=prevents_castling))
-        if chessboard[56] != 0: #White long castle
-            if chessboard[57]==0 and chessboard[58]==0 and chessboard[59]==0:
-                moves.add(Move(i,i-2,castle=2,prevents_castle=prevents_castling))
-    if piece.colour == BLACK and i==4:
-        if chessboard[7] != 0: #Black short castle
-            if chessboard[5]==0 and chessboard[6]==0:
-                moves.add(Move(i,i+2,castle=1,prevents_castle=prevents_castling))
-        if chessboard[0] != 0: #Black long castle
-            if chessboard[1]==0 and chessboard[2]==0 and chessboard[3]==0:
-                moves.add(Move(i,i-2,castle=2,prevents_castle=prevents_castling))
     return moves
 
+def calc_castle(chessboard,colour):
+    moves = set()
+    if colour==WHITE:
+        if chessboard[60]!=0:
+            if chessboard[60].type==KING:
+                if chessboard[63] != 0:  # White short castle
+                    if chessboard[61] == 0 and chessboard[62] == 0:
+                        moves.add(Move(60, 62, castle=1, prevents_castle=[1,1,0,0]))
+                if chessboard[56] != 0:  # White long castle
+                    if chessboard[57] == 0 and chessboard[58] == 0 and chessboard[59] == 0:
+                        moves.add(Move(60, 58, castle=2, prevents_castle=[1,1,0,0]))
+    else:
+        if chessboard[4] != 0:
+            if chessboard[4].type == KING:
+                if chessboard[7] != 0:  # Black short castle
+                    if chessboard[5] == 0 and chessboard[6] == 0:
+                        moves.add(Move(4, 6, castle=1, prevents_castle=[0,0,1,1]))
+                if chessboard[0] != 0:  # Black long castle
+                    if chessboard[1] == 0 and chessboard[2] == 0 and chessboard[3] == 0:
+                        moves.add(Move(4, 2, castle=2, prevents_castle=[0,0,1,1]))
+    return moves
 
 def calc_rook(chessboard, move_from, piece):
     i = move_from[0] * 8 + move_from[1]
@@ -166,6 +173,25 @@ def all_moves(board, colour):
                     moves = moves | calc_piece(board,(i,j),board[i,j])
     return moves
 
+def calc_legal_castle (board,moves,colour):
+    newmoves = set()
+    index = 1 if colour == WHITE else 0
+    for move in moves:
+        if move.get_castle() == 1:
+            offset = 3 if colour == WHITE else 1
+            if board.castle_rights[offset]==0:
+                continue
+            if board.attack_squares[index][move.move_from] or board.attack_squares[index][move.move_from+1] or board.attack_squares[index][move.move_from+2]:
+                continue
+        if move.get_castle() == 2:
+            offset = 2 if colour == WHITE else 0
+            if board.castle_rights[offset] == 0:
+                continue
+            if board.attack_squares[index][move.move_from] or board.attack_squares[index][move.move_from -1] or board.attack_squares[index][move.move_from-2]:
+                continue
+        newmoves.add(move)
+    return newmoves
+
 def pinned_pieces(board, colour,king_position):
     squares = {}
     i = king_position
@@ -207,27 +233,10 @@ def pinned_pieces(board, colour,king_position):
 def all_legal_moves(board, colour):
     index = 1 if colour == WHITE else 0
     new_moves = set()
-    boardcopy = copy.deepcopy(board)
-    moves = all_moves(boardcopy, colour)
-    pinned = pinned_pieces(boardcopy, colour,board.get_king_position())
+    moves = all_moves(board, colour)
+    castle_moves = calc_legal_castle(board,calc_castle(board.chessboard,colour),colour)
+    pinned = pinned_pieces(board, colour,board.get_king_position())
     for move in moves:
-        if move.get_castle() == 1:
-            offset = 3 if colour == WHITE else 1
-            if board.castle_rights[offset]==0:
-                continue
-            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from + 1):
-            #     continue
-            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from + 1))):
-                continue
-        if move.get_castle() == 2:
-            offset = 2 if colour == WHITE else 0
-            if board.castle_rights[offset] == 0:
-                continue
-            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from - 1):
-            #     continue
-            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from - 1))):
-                continue
-
         if not (board.is_king_checked() or move.get_castle()==3):
             if move.move_from in pinned:
                 if not is_pinned_move_legal(move.getpair_from(),move.getpair_to(),pinned[move.move_from]):
@@ -236,10 +245,10 @@ def all_legal_moves(board, colour):
                 continue
             new_moves.add(move)
             continue
-        if not islegal(boardcopy, move):
+        if not islegal(board, move):
             continue
         new_moves.add(move)
-    return new_moves
+    return new_moves | castle_moves
 
 def is_pinned_move_legal(pair_from,pair_to,offset):
     i1,j1 = pair_from
@@ -262,26 +271,11 @@ def all_legal_piece_moves(board, move_from,piece):
     index = 1 if piece.colour == WHITE else 0
     moves = calc_piece(board, move_from, piece)
     new_moves = set()
-    boardcopy = copy.deepcopy(board)
     colour= piece.colour
-    pinned = pinned_pieces(boardcopy, colour,board.get_king_position())
+    pinned = pinned_pieces(board, colour,board.get_king_position())
+    castle_moves = set()
+    if piece.type == KING: castle_moves = calc_legal_castle(board, calc_castle(board.chessboard, colour), colour)
     for move in moves:
-        if move.get_castle() == 1:
-            offset = 3 if colour == WHITE else 1
-            if board.castle_rights[offset] == 0:
-                continue
-            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from + 1):
-            #     continue
-            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from + 1))):
-                continue
-        if move.get_castle() == 2:
-            offset = 2 if colour == WHITE else 0
-            if board.castle_rights[offset] == 0:
-                continue
-            # if is_square_attacked(boardcopy, move.move_from) or is_square_attacked(boardcopy, move.move_from - 1):
-            #     continue
-            if not (islegal(boardcopy, None) and islegal(boardcopy, Move(move.move_from, move.move_from - 1))):
-                continue
         if not (board.is_king_checked() or move.get_castle() == 3):
             if move.move_from in pinned:
                 if not is_pinned_move_legal(move.getpair_from(), move.getpair_to(), pinned[move.move_from]):
@@ -290,10 +284,12 @@ def all_legal_piece_moves(board, move_from,piece):
                 continue
             new_moves.add(move)
             continue
-        if not islegal(boardcopy, move):
+        if not islegal(board, move):
             continue
         new_moves.add(move)
-    return new_moves
+    return new_moves | castle_moves
+
+
 def king_capture(chessboard, move):
     if chessboard[move.move_to] != 0: # this is single index format
         if chessboard[move.move_to].type == KING:
@@ -309,10 +305,12 @@ def make_move(board, move):
     board.previous_passant_move = False
     board.prev_castle_rights = board.castle_rights.copy()
     board.previous_attack_squares = board.attack_squares.copy()
+    board.prev_king_pos = board.king_pos.copy()
+    if board.chessboard[move.move_from].type == KING:
+        index = 1 if board.chessboard[move.move_from].colour == WHITE else 0
+        board.king_pos[index]=move.move_to
     if board.chessboard[move.move_to]!=0:
         board.previous_piece = board.chessboard[move.move_to]
-        if board.chessboard[move.move_to].type == KING:
-            board.king_in_check = True
     if board.castle_rights != [0, 0, 0, 0]:
         if move.move_to == 63:
             board.castle_rights[3]=0
@@ -368,7 +366,9 @@ def unmake_move(board,move):
     board.passants = board.previous_passants.copy()
     board.castle_rights = board.prev_castle_rights.copy()
     board.attack_squares = board.previous_attack_squares.copy()
+    board.king_pos = board.prev_king_pos.copy()
     board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
+
     i = move.move_from
     j = move.move_to
     chessboard = board.chessboard
@@ -413,6 +413,7 @@ def islegal(board, move):
             return False
     unmake_move(board, move)
     return True
+
 def is_square_attacked(board, index):
     who_to_move = WHITE if board.who_to_move == BLACK else BLACK
     moves = all_moves(board,who_to_move)
@@ -439,7 +440,7 @@ def insufficient_material(board):
 def isgameover(board):
     moves = all_legal_moves(board,board.who_to_move)
     if len(moves) == 0:
-        if not islegal(board,None):
+        if board.is_king_checked():
             return CHECKMATE
         else:
             return STALEMATE
