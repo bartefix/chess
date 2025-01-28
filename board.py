@@ -7,27 +7,6 @@ from attackSquares import calculate_attack_squares
 class Board:
     def __init__(self):
         self.chessboard = [0 for x in range(64)]
-        # self.chessboard[0] = Piece(ROOK, BLACK)
-        # self.chessboard[1] = Piece(KNIGHT, BLACK)
-        # self.chessboard[2] = Piece(BISHOP, BLACK)
-        # self.chessboard[3] = Piece(QUEEN, BLACK)
-        # self.chessboard[4] = Piece(KING, BLACK)
-        # self.chessboard[5] = Piece(BISHOP, BLACK)
-        # self.chessboard[6] = Piece(KNIGHT, BLACK)
-        # self.chessboard[7] = Piece(ROOK, BLACK)
-        # for i in range(8):
-        #     self.chessboard[8 + i] = Piece(PAWN,BLACK)
-        #
-        # self.chessboard[56] = Piece(ROOK, WHITE)
-        # self.chessboard[57] = Piece(KNIGHT, WHITE)
-        # self.chessboard[58] = Piece(BISHOP, WHITE)
-        # self.chessboard[59] = Piece(QUEEN, WHITE)
-        # self.chessboard[60] = Piece(KING, WHITE)
-        # self.chessboard[61] = Piece(BISHOP, WHITE)
-        # self.chessboard[62] = Piece(KNIGHT, WHITE)
-        # self.chessboard[63] = Piece(ROOK, WHITE)
-        # for i in range(8):
-        #     self.chessboard[48 + i] = Piece(PAWN, WHITE)
         self.passants = set()
         self.who_to_move = WHITE
         self.previous_piece = None
@@ -38,8 +17,8 @@ class Board:
         self.king_pos = [4,60] # 1 - white, 0 - black
         self.prev_king_pos = [4,60]
         self.attack_squares = [[0 for x in range(64)],[0 for x in range(64)]] # 1 - white, 0 - black
-        self.previous_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
-        self.load_fen(fenpositions[0])
+        #self.previous_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
+        self.load_fen(eval_test_positions[3])
 
     def print_board(self):
         for idx, squares in enumerate(self.attack_squares):

@@ -28,8 +28,7 @@ fenpositions = [ # perft test
     "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ",
     "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
     "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-    "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
-    #'r2q1rk1/ppp1bpp1/2npbn2/4pNQp/2B1P1P1/3P1N2/PPP2P1P/R1B3RK b Qq - 0 1'
+    "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 "
 
 ]
 endgame_positions = [
@@ -38,6 +37,13 @@ endgame_positions = [
     "8/7k/7P/3p1pKp/2p5/2P1P3/8/8 w - - 0 55",
     "4kb2/8/8/8/4P3/8/2K5/8 w - - 0 1"
 ]
+eval_test_positions = [
+    "3K4/6q1/8/1b6/8/8/8/6k1 b - - 0 1",
+    "4r1k1/p1p2ppp/b1p5/2bqN3/3P4/2P4P/P1P2PP1/R1BQR1K1 b Q - 0 1",
+    "r1q1kbnr/pp2pppp/2p5/3p4/1n2P3/5N2/PPPP1PPP/RNB1KB1R b KQkq - 1 6",
+    "2k5/1ppr1Bp1/p6p/8/Pb6/4P3/1PP2PPP/R5K1 w - - 1 20"
+
+]
 fenpositions_true_values = [
     [1,20,400,8902,197281,4865609],
     [1,48,2039,97862,4085603],
@@ -45,7 +51,6 @@ fenpositions_true_values = [
     [1,6,264,9467,422333],
     [1,44,1486,62379,2103487],
     [1,46,2079,89890,3894594],
-    #[0,0,0,0,0]
 ]
 endgame_positions_true_values = [
     [1,9,33,409,2314,33392,172944,2929931],

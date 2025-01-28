@@ -1,7 +1,6 @@
 from moves import *
 from constants import *
 def evaluate_position(board):
-    side = {WHITE: 1, BLACK: -1}
     eval = 0.0
     chessboard=board.chessboard
     for i in range(64):
@@ -16,44 +15,66 @@ def evaluate_position(board):
     eval /=100
     return eval
 
-def search(board,depth):
+def search(board,depth,alpha,beta):
     board_copy = board.copy()
-    if board.is_king_checked():
-        moves = all_legal_moves(board_copy, board.who_to_move)
-        if len(moves) == 0:
-            return float('inf') if board.who_to_move == BLACK else float('-inf')
+    moves = all_legal_moves(board_copy, board_copy.who_to_move)
+    candidate = None
+    #candidate = ""
+    if len(moves) == 0:
+        if board.is_king_checked():
+            return (MATEINONE,candidate) if board.who_to_move == BLACK else (-MATEINONE,candidate)
         else:
-            return 0.0
-    else: moves = None
+            return (0.0,candidate)
 
     if insufficient_material(board):
-        return 0.0
+        return (0.0,candidate)
 
     if depth==0:
-        return evaluate_position(board)
+        return (evaluate_position(board),candidate)
 
-    if moves is None:
-        moves = all_legal_moves(board_copy, board.who_to_move)
+    #if moves is None:
+        #moves = all_legal_moves(board_copy, board_copy.who_to_move)
+
     if board.who_to_move==WHITE:
         best = float('-inf')
+        j=0
         for move in moves:
             make_move(board_copy,move)
-            eval = search(board_copy,depth-1)
+            eval,j= search(board_copy,depth-1,alpha,beta)
             unmake_move(board_copy,move)
-            if eval > best:
-                best = eval
-        return best
 
+            if abs(eval) > MATEINONE/2: # A primitive way to value qick mates faster
+                eval*=0.95
+
+            #print(f"Depth: {depth} - After move: {move.get_stockfish_format()}, eval: {eval}")
+            if eval >= best:
+                best = eval
+                candidate = move
+            alpha = max(alpha, eval)
+            if alpha >= beta:
+                break
+        #return best,f"{candidate}, {j}"
+        return (best,candidate)
     if board.who_to_move==BLACK:
         best = float('inf')
+        j = 0
         for move in moves:
             make_move(board_copy,move)
-            eval = search(board_copy,depth-1)
+            eval, j = search(board_copy,depth-1,alpha,beta)
             unmake_move(board_copy, move)
-            if eval < best:
-                best = eval
-        return best
 
+            if abs(eval) > MATEINONE/2:
+                eval*=0.95
+
+            #print(f"Depth: {depth} - After move: {move.get_stockfish_format()}, eval: {eval}")
+            if eval <= best:
+                best = eval
+                candidate = move
+            beta = min(beta, eval)
+            if alpha >= beta:
+                break
+        #return best,f"{candidate}, {j}"
+        return (best, candidate)
 def count_positions(board,depth):
     if depth==0:
         return 1
@@ -72,9 +93,9 @@ def count_positions(board,depth):
         #     print(f"{move.get_stockfish_format()}: {a}")
     return numpos
 
-piece_value = [-1,20000,900,500,300,300,100]
-
-
+piece_value = [20000,900,500,300,300,100]
+MATEINONE = 100_000
+MATEDOWNSTEP = 5_000
 squares_king = [-30,-40,-40,-50,-50,-40,-40,-30,
                 -30,-40,-40,-50,-50,-40,-40,-30,
                 -30,-40,-40,-50,-50,-40,-40,-30,

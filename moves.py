@@ -304,7 +304,7 @@ def make_move(board, move):
     board.previous_piece = None
     board.previous_passant_move = False
     board.prev_castle_rights = board.castle_rights.copy()
-    board.previous_attack_squares = board.attack_squares.copy()
+    #board.previous_attack_squares = board.attack_squares.copy()
     board.prev_king_pos = board.king_pos.copy()
     if board.chessboard[move.move_from].type == KING:
         index = 1 if board.chessboard[move.move_from].colour == WHITE else 0
@@ -365,7 +365,7 @@ def unmake_move(board,move):
         return
     board.passants = board.previous_passants.copy()
     board.castle_rights = board.prev_castle_rights.copy()
-    board.attack_squares = board.previous_attack_squares.copy()
+    #board.attack_squares = board.previous_attack_squares.copy()
     board.king_pos = board.prev_king_pos.copy()
     board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
 

@@ -19,7 +19,7 @@ class Move:
         self.enable_passant = enable_passant # set of en passant moves for next turn
 
     '''
-    theres an uncaught bug where a (possibly) queen move adds two identical moves to the set. This solves the issue 
+    there WAS an uncaught bug where a (possibly) queen move adds two identical moves to the set. This solves the issue 
     '''
     def __eq__(self, other):
         if not isinstance(other, Move):
@@ -55,3 +55,5 @@ class Move:
         rank = str(8 - row)  # Convert row index to rank (8 to 1)
         letterto = file + rank
         return letterfrom+letterto
+    def __repr__(self):
+        return f"{self.get_stockfish_format()}"
