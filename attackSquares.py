@@ -9,12 +9,13 @@ Attacked squares differ from calculating moves because we can attack squares wit
 It also requieres much less computation so it is more efficient to write another set of functions
 '''
 
-def calc_pawn_attacksquares(chessboard, i, piece,attack_squares):
+def calc_pawn_attacksquares(chessboard, i, piece,attack_squares,pawn_attack_squares):
 
     which_colour = 1 if piece.colour == BLACK else -1
     for capture in [7, 9]:
         if 0 <= i + capture * which_colour < 64 and abs(i % 8 - (i + capture * which_colour) % 8) < 2:
             attack_squares[i + capture * which_colour] = 1
+            pawn_attack_squares[i + capture * which_colour] = 1
 
 def calc_king_attacksquares(chessboard, i, piece,attack_squares):
     offsets = [-9, -8, -7, -1, 1, 7, 8, 9]
@@ -58,11 +59,11 @@ def calc_queen_attacksquares(chessboard, i, piece,attack_squares):
     calc_rook_attacksquares(chessboard, i, piece,attack_squares)
     calc_bishop_attacksquares(chessboard, i, piece,attack_squares)
 
-def calc_attacks_help(board, i, piece,attack_squares):
+def calc_attacks_help(board, i, piece,attack_squares,pawn_attack_squares):
     chessboard = board.chessboard
     type = piece.type
     if type == PAWN:
-        calc_pawn_attacksquares(chessboard, i, piece,attack_squares)
+        calc_pawn_attacksquares(chessboard, i, piece,attack_squares,pawn_attack_squares)
     if type == ROOK:
         calc_rook_attacksquares(chessboard, i, piece,attack_squares)
     if type == BISHOP:
@@ -77,10 +78,11 @@ def calc_attacks_help(board, i, piece,attack_squares):
 def calculate_attack_squares(board,colour):
     index = 0 if colour == WHITE else 1
     board.attack_squares[index] = [0 for x in range(64)]
+    board.pawn_attack_squares[index] = [0 for x in range(64)]
     for i in range(64):
             if board.chessboard[i] != 0:
                 if board.chessboard[i].colour == colour:
-                    calc_attacks_help(board, i, board.chessboard[i],board.attack_squares[index])
+                    calc_attacks_help(board, i, board.chessboard[i],board.attack_squares[index],board.pawn_attack_squares[index])
 
 def squares_between(): #preprocessing squares between every two squares to quickly find if we can block check
     arr = [[[] for _ in range(64)] for _ in range(64)]

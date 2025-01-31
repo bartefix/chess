@@ -1,3 +1,4 @@
+from CaptureMoves import all_captures
 from board import *
 import copy
 from attackSquares import *
@@ -250,6 +251,25 @@ def all_legal_moves(board, colour):
         new_moves.add(move)
     return new_moves | castle_moves
 
+def all_legal_captures(board,colour):
+    index = 1 if colour == WHITE else 0
+    new_moves = set()
+    moves = all_captures(board, colour)
+    pinned = pinned_pieces(board, colour, board.get_king_position())
+    for move in moves:
+        if not (board.is_king_checked() or move.get_castle() == 3):
+            if move.move_from in pinned:
+                if not is_pinned_move_legal(move.getpair_from(), move.getpair_to(), pinned[move.move_from]):
+                    continue
+            if board[move.getpair_from()].type == KING and board.attack_squares[index][move.move_to] == 1:
+                continue
+            new_moves.add(move)
+            continue
+        if not islegal(board, move):
+            continue
+        new_moves.add(move)
+    return new_moves
+
 def is_pinned_move_legal(pair_from,pair_to,offset):
     i1,j1 = pair_from
     i2,j2 = pair_to
@@ -304,7 +324,6 @@ def make_move(board, move):
     board.previous_piece = None
     board.previous_passant_move = False
     board.prev_castle_rights = board.castle_rights.copy()
-    #board.previous_attack_squares = board.attack_squares.copy()
     board.prev_king_pos = board.king_pos.copy()
     if board.chessboard[move.move_from].type == KING:
         index = 1 if board.chessboard[move.move_from].colour == WHITE else 0
@@ -365,7 +384,6 @@ def unmake_move(board,move):
         return
     board.passants = board.previous_passants.copy()
     board.castle_rights = board.prev_castle_rights.copy()
-    #board.attack_squares = board.previous_attack_squares.copy()
     board.king_pos = board.prev_king_pos.copy()
     board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
 
@@ -407,7 +425,7 @@ def unmake_move(board,move):
 
 def islegal(board, move):
     make_move(board, move)
-    for movenext in all_moves(board,board.who_to_move):
+    for movenext in all_captures(board,board.who_to_move):
         if king_capture(board.chessboard, movenext):
             unmake_move(board,move)
             return False

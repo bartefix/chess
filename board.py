@@ -16,10 +16,10 @@ class Board:
         self.prev_castle_rights = [0,0,0,0]
         self.king_pos = [4,60] # 1 - white, 0 - black
         self.prev_king_pos = [4,60]
-        self.attack_squares = [[0 for x in range(64)],[0 for x in range(64)]] # 1 - white, 0 - black
+        self.attack_squares = [[0 for x in range(64)],[0 for x in range(64)]] # 0 - white, 1 - black
         #self.previous_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
-        self.load_fen(eval_test_positions[3])
-
+        self.pawn_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]] # 0 - white, 1 - black
+        self.load_fen(fenpositions[0])
     def print_board(self):
         for idx, squares in enumerate(self.attack_squares):
             print(f"Board {idx + 1}:")
@@ -42,7 +42,6 @@ class Board:
 
     def is_king_checked(self):
         index = 1 if self.who_to_move == WHITE else 0
-       # print(self.king_pos)
         return self.attack_squares[index][self.king_pos[index]]
 
     def get_king_position(self):

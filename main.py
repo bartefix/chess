@@ -3,7 +3,7 @@ import pygame
 import pygame as p
 from constants import *
 from board import Board
-from evaluation import count_positions, evaluate_position
+from evaluation import count_positions, evaluate_position, sort_moves
 from moves import *
 from Bot import Bot
 import time
@@ -150,13 +150,14 @@ if __name__ == "__main__":
             if first_turn:
                 # bot.benchmark(4,0)
                 #print(count_positions(board, 2))
-                #print(evaluate_position(board))
+                x = list(all_legal_moves(board,board.who_to_move))
+                sort_moves(board,x)
+                print(x)
                 first_turn = False
             if board.who_to_move == BLACK and state==PLAYING and not BLACK_PLAYER:
                 time.sleep(TIMEBETWEENMOVES)
-
                 start_time = time.perf_counter()
-                move = bot.give_move(4)
+                move = bot.give_move(3)
                 end_time = time.perf_counter()
                 elapsed_time = end_time - start_time
                 print(f"Elapsed time: {elapsed_time:.6f} seconds")
@@ -165,12 +166,15 @@ if __name__ == "__main__":
                 window.blit(cached_background, (0, 0))
                 state = isgameover(board)
                 pygame.display.update()
-                print(f"After black move: {evaluate_position(board)}")
                 continue
 
             if board.who_to_move == WHITE and state==PLAYING and not WHITE_PLAYER:
                 time.sleep(TIMEBETWEENMOVES)
-                move = bot.give_move(4)
+                start_time = time.perf_counter()
+                move = bot.give_move(3)
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                print(f"Elapsed time: {elapsed_time:.6f} seconds")
                 make_move(board, move)
                 draw_board(board)
                 window.blit(cached_background, (0, 0))
@@ -233,9 +237,7 @@ if __name__ == "__main__":
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
                         lastmove = move
-                        print(evaluate_position(board))
-                        # board.print_board()
-                        #print(board.king_pos)
+                        #print(evaluate_position(board))
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
                     selected_piece = 0
