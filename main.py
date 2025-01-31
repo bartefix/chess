@@ -9,6 +9,7 @@ from Bot import Bot
 import time
 
 p.init()
+p.mixer.init()
 button_rect = p.Rect(80, 100, 160, 160)  # x, y, width, height
 button_color = (255, 255, 255)
 cached_background = p.Surface((WIDTH, HEIGHT))
@@ -28,7 +29,18 @@ w_pawn = p.image.load("graphics\\w_pawn_png_512px.png")
 sniper = p.image.load("graphics\sniper.png")
 table = [w_king, w_queen, w_rook, w_bishop, w_knight, w_pawn, b_king, b_queen, b_rook, b_bishop, b_knight, b_pawn]
 
+move_sound = pygame.mixer.Sound("sounds/move-self.mp3")
+capture_sound = pygame.mixer.Sound("sounds/capture.mp3")
+check_sound = pygame.mixer.Sound("sounds/move-check.mp3")
 
+def play_sound():
+    if board.is_king_checked():
+        check_sound.play()
+        return
+    if board.previous_piece is not None:
+        capture_sound.play()
+        return
+    move_sound.play()
 def resize(image):
     return p.transform.scale(image, (SIZE * image.get_width() / image.get_height(), SIZE))
 
@@ -71,6 +83,9 @@ def draw_board(board):
     for i in range(8):
         for j in range(8):
             if board[i, j] != 0 and not move_piece_from == (i,j):
+                if lastmove is not None:
+                    if lastmove.getpair_to() == (i,j):
+                        p.draw.rect(cached_background, (252,205,76), (j * BLOCK, i * BLOCK, BLOCK, BLOCK))
                 draw_piece2(i, j, board[i, j],cached_background)
 
 def retrieve_move(moves, move_from, move_to):
@@ -148,36 +163,40 @@ if __name__ == "__main__":
         clock.tick(FPS)
         for event in p.event.get():
             if first_turn:
-                # bot.benchmark(4,0)
-                #print(count_positions(board, 2))
-                x = list(all_legal_moves(board,board.who_to_move))
-                sort_moves(board,x)
-                print(x)
+                play_sound()
                 first_turn = False
             if board.who_to_move == BLACK and state==PLAYING and not BLACK_PLAYER:
-                time.sleep(TIMEBETWEENMOVES)
+                draw_board(board)  # Draw board first
+                window.blit(cached_background, (0, 0))
+                pygame.display.update()
                 start_time = time.perf_counter()
                 move = bot.give_move(3)
                 end_time = time.perf_counter()
                 elapsed_time = end_time - start_time
                 print(f"Elapsed time: {elapsed_time:.6f} seconds")
                 make_move(board, move)
+                lastmove = move
                 draw_board(board)
                 window.blit(cached_background, (0, 0))
+                play_sound()
                 state = isgameover(board)
                 pygame.display.update()
                 continue
 
             if board.who_to_move == WHITE and state==PLAYING and not WHITE_PLAYER:
-                time.sleep(TIMEBETWEENMOVES)
+                draw_board(board)  # Draw board first
+                window.blit(cached_background, (0, 0))
+                pygame.display.update()
                 start_time = time.perf_counter()
                 move = bot.give_move(3)
                 end_time = time.perf_counter()
                 elapsed_time = end_time - start_time
                 print(f"Elapsed time: {elapsed_time:.6f} seconds")
                 make_move(board, move)
+                lastmove = move
                 draw_board(board)
                 window.blit(cached_background, (0, 0))
+                play_sound()
                 state = isgameover(board)
                 pygame.display.update()
                 continue
@@ -237,6 +256,7 @@ if __name__ == "__main__":
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
                         lastmove = move
+                        play_sound()
                         #print(evaluate_position(board))
                     else:
                         board[move_piece_from[0], move_piece_from[1]] = selected_piece
