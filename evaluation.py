@@ -7,20 +7,31 @@ def evaluate_position(board):
     eval = 0.0
     chessboard=board.chessboard
     index = 1 if board.who_to_move==WHITE else -1
-    white_material = 0
-    black_material = 0
+    white_material = -piece_value[0] # material without kings
+    black_material = -piece_value[0]
+    for i in range(64):
+        if chessboard[i]!= 0:
+                if chessboard[i].colour==WHITE:
+                    white_material += piece_value[chessboard[i].type - 1]
+                if chessboard[i].colour==BLACK:
+                    black_material += piece_value[chessboard[i].type - 1]
+    material = (white_material + black_material) / 7800
     for i in range(64):
         if chessboard[i]!= 0:
             if chessboard[i].type != KING:
                 if chessboard[i].colour==WHITE:
-                    white_material += piece_value[chessboard[i].type - 1]
-                    eval += piece_value[chessboard[i].type-1] + squares_all[chessboard[i].type-1][i]
+                    if chessboard[i].type != PAWN:
+                        eval += piece_value[chessboard[i].type-1] + squares_all[chessboard[i].type-1][i]
+                    else:
+                        eval += material * squares_pawn[i] + (1 - material) * squares_pawn_endgame[i]+ piece_value[chessboard[i].type-1]
                 if chessboard[i].colour==BLACK:
-                    black_material += piece_value[chessboard[i].type - 1]
                     r = 7 - (i // 8)
                     c = i % 8
                     j = r*8+c
-                    eval -= piece_value[chessboard[i].type - 1] + squares_all[chessboard[i].type-1][j]
+                    if chessboard[i].type != PAWN:
+                        eval -= piece_value[chessboard[i].type - 1] + squares_all[chessboard[i].type-1][j]
+                    else:
+                        eval -= material * squares_pawn[j] + (1 - material) * squares_pawn_endgame[j] + piece_value[chessboard[i].type-1]
     eval += calculate_king_eval(board, white_material, black_material)
     eval /=100
     return eval*index
@@ -237,4 +248,14 @@ squares_king_endgame = [
                 -30,-10, 20, 30, 30, 20,-10,-30,
                 -30,-30,  0,  0,  0,  0,-30,-30,
                 -50,-30,-30,-30,-30,-30,-30,-50]
+squares_pawn_endgame = [
+                 0,  0,  0,  0,  0,  0,  0,  0,
+                75, 75, 75, 75, 75, 75, 75, 75,
+                50, 50, 50, 50, 50, 50, 50, 50,
+                30, 30, 30, 30, 30, 30, 30, 30,
+                15, 15, 15, 15, 15, 15, 15, 15,
+                 5,  5,  5,  5,  5,  5,  5,  5,
+                 5,  5,  5,  5,  5,  5,  5,  5,
+                 0,  0,  0,  0,  0,  0,  0,  0
+]
 squares_all = [squares_king,squares_queen,squares_rook,squares_bishop,squares_knight,squares_pawn]

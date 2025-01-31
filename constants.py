@@ -38,16 +38,17 @@ endgame_positions = [
     "4kb2/8/8/8/4P3/8/2K5/8 w - - 0 1"
 ]
 eval_test_positions = [
-    "4r1k1/p1p2ppp/b1p5/2bqN3/3P4/2P4P/P1P2PP1/R1BQR1K1 b Q - 0 1",
+    "4r1k1/p1p2ppp/b1p5/2bqN3/3P4/2P4P/P1P2PP1/R1BQR1K1 b Q - 0 1", #0
     "r1q1kbnr/pp2pppp/2p5/3p4/1n2P3/5N2/PPPP1PPP/RNB1KB1R b KQkq - 1 6",
     "2k5/1ppr1Bp1/p6p/8/Pb6/4P3/1PP2PPP/R5K1 w - - 1 20",
     "8/4k2K/8/8/6q1/8/8/8 b - - 3 2",
     "8/1R6/r6k/5K2/6P1/N4P2/1p6/r7 w - - 9 50",
-    "r3k2r/pp1b1ppp/2n1pn2/q2p4/1b1P1B2/P1N2P2/1PPQN1PP/1K1R1B1R b kq - 0 11",
+    "r3k2r/pp1b1ppp/2n1pn2/q2p4/1b1P1B2/P1N2P2/1PPQN1PP/1K1R1B1R b kq - 0 11", #5
     "8/7K/4kq2/8/8/8/8/8 b - - 0 1",
     "4r1k1/1pp2pp1/1b2p2p/r2p4/P2P3q/2P4P/1PQ2PP1/R3R1K1 b - - 0 1",
     "r2qk2r/pp2bppp/2pp1n2/1B6/1n2P1b1/2N1QN2/PPP2PPP/R1B2RK1 b Qkq - 0 1",
     "r2qr1k1/ppp2pbp/2p1b1p1/4N2n/3PPB2/2N5/PPP2PPP/R2QR1K1 w Qq - 0 1",
+    "8/1p6/8/6b1/7p/7K/5k2/8 w - - 0 1", #10
 ]
 fenpositions_true_values = [
     [1,20,400,8902,197281,4865609],
