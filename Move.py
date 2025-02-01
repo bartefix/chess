@@ -24,7 +24,7 @@ class Move:
     def __eq__(self, other):
         if not isinstance(other, Move):
             return False
-        return (self.move_from, self.move_to, self.promotion, self.castle, self.enable_passant) == (other.move_from, other.move_to, other.promotion,other.castle,other.enable_passant)
+        return (self.move_from, self.move_to, self.promotion, self.castle) == (other.move_from, other.move_to, other.promotion,other.castle)
 
     def __hash__(self):
         return hash((self.move_from, self.move_to, self.promotion, self.castle))
