@@ -4,22 +4,35 @@ from moves import *
 from constants import *
 from evaluation import *
 import random
+
 class Bot:
     def __init__(self,board):
         self.board = board
 
     def give_move(self,_depth):
+
         moves = all_legal_moves(self.board,self.board.who_to_move)
         moves_list = list(moves)
-        sort_moves(self.board, moves_list)
+        #sort_moves(self.board, moves_list)
+
         if len(moves_list) == 1: # If only one move we don't have a choice
             return moves_list[0]
+
         #print(moves_list)
         depth = _depth
-        n = len(moves)
         colour_modifier = 1 if self.board.who_to_move == WHITE else -1
+        copy_board = copy.deepcopy(self.board)
         alpha = float("-inf")
         beta = float("inf")
+        '''
+        We first search at a super shallow depth, and in the next iteration look at the best move
+        from previous iteration first. Despite the shallow depth the moves are often the best moves found at deeper depth.
+        This is a simplified version of a Principle Variation.
+        '''
+        set_last_best_move(None,-1)
+        _, best_move = search(copy_board, depth-2, alpha, beta)
+        set_last_best_move(best_move,depth)
+
         copy_board = copy.deepcopy(self.board)
         eval,best_move = search(copy_board,depth,alpha,beta)
         print(f"Best move: {best_move}, eval: {eval*colour_modifier:.2f}")

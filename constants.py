@@ -20,7 +20,7 @@ DRAW = 2
 STALEMATE = 3
 CHECKMATE = 4
 
-TIMEBETWEENMOVES = 0.1
+TIMEBETWEENMOVES = 0.2
 
 fenpositions = [ # perft test
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
@@ -49,6 +49,7 @@ eval_test_positions = [
     "r2qk2r/pp2bppp/2pp1n2/1B6/1n2P1b1/2N1QN2/PPP2PPP/R1B2RK1 b Qkq - 0 1",
     "r2qr1k1/ppp2pbp/2p1b1p1/4N2n/3PPB2/2N5/PPP2PPP/R2QR1K1 w Qq - 0 1",
     "8/1p6/8/6b1/7p/7K/5k2/8 w - - 0 1", #10
+    "r1b1kb1r/pppqppp1/2n2n1p/3p4/3PP3/2NB1N2/PPP2PPP/R1BQ1RK1 w q - 1 8",
 ]
 fenpositions_true_values = [
     [1,20,400,8902,197281,4865609],

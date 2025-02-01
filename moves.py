@@ -1,5 +1,5 @@
-from CaptureMoves import all_captures
-from board import *
+from captureMoves import all_captures
+from Board import *
 import copy
 from attackSquares import *
 from Move import Move

@@ -1,5 +1,12 @@
 from moves import *
 from constants import *
+
+
+best_move_last_iteration = (-1,None)
+def set_last_best_move(move, depth):
+    global best_move_last_iteration
+    best_move_last_iteration = depth,move
+
 def evaluate_position(board):
     '''
     Evaluation returns positive values if the position is good for the player whose turn it is.
@@ -59,18 +66,27 @@ def move_heuristic(board,move):
     score = 0
     chessboard=board.chessboard
     index = 1 if board.who_to_move == WHITE else 0
+
     if move.castle != 0:
         score += 50
+
     if chessboard[move.move_to] != 0:
         score += max(piece_value[chessboard[move.move_to].type-1] - piece_value[chessboard[move.move_from].type-1],100)
         if board.attack_squares[index][move.move_to] == 0:
             score += piece_value[chessboard[move.move_to].type-1]
+
     if move.promotion != 0:
         score += piece_value[move.promotion-1]
+
     if board.pawn_attack_squares[index][move.move_to] == 1 and chessboard[move.move_from].type!=PAWN:
-        score -= piece_value[chessboard[move.move_from].type-1]
+        score -= piece_value[chessboard[move.move_from].type-1]  # If we move a piece into a pawn held square its probably bad
+
     if board.pawn_attack_squares[index][move.move_from] == 1 and chessboard[move.move_from].type != PAWN:
-        score += piece_value[chessboard[move.move_from].type-1]
+        score += piece_value[chessboard[move.move_from].type-1] # If we move a piece from a pawn held square its probably good
+
+    # if board.attack_squares[index][move.move_to] == 1: #and board.attack_squares[1-index][move.move_to] == 0:
+    #     score -= piece_value[chessboard[move.move_from].type-1]
+
     score += squares_all[chessboard[move.move_from].type-1][move.move_to] - squares_all[chessboard[move.move_from].type-1][move.move_from]
     return score
 
@@ -110,6 +126,13 @@ def search(board,depth,alpha,beta):
     moves = list(moves)
     sort_moves(board,moves)
     best = float('-inf')
+
+    global best_move_last_iteration
+    if best_move_last_iteration[0] == depth:
+
+        moves.remove(best_move_last_iteration[1])
+        moves.insert(0, best_move_last_iteration[1])
+
     for move in moves:
 
         make_move(board_copy,move)
@@ -118,9 +141,8 @@ def search(board,depth,alpha,beta):
 
         #print(f"Depth: {depth},move: {move.get_stockfish_format()}, eval: {eval}")
         eval = -eval
-        eval-=0.02
-        #eval+=0.02*(-1 if eval > 0 else 1) # My bot had no incentive to achieve better position fast - it would cause him to repeat moves back and forth.
-                   # I didn't see anyone use this trick so maybe there is a better way
+        eval-=0.02 # To incentive playing good moves quicker
+
         if abs(eval) > MATEINONE/2:
             eval+= MATEDOWNSTEP * (-1 if eval > 0 else 1)
 

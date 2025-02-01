@@ -1,5 +1,5 @@
 from constants import *
-from pieces import *
+from Piece import *
 class Move:
     def __init__(self, move_from, move_to, promotion=0, castle=0, enable_passant=None, prevents_castle=None):
         # parameters passed either both as pairs or both as integers

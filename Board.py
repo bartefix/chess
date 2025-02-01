@@ -1,7 +1,7 @@
 import copy
 
 from constants import *
-from pieces import *
+from Piece import *
 from attackSquares import calculate_attack_squares
 
 class Board:
@@ -20,6 +20,7 @@ class Board:
         #self.previous_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]]
         self.pawn_attack_squares = [[0 for x in range(64)],[0 for x in range(64)]] # 0 - white, 1 - black
         self.load_fen(fenpositions[0])
+
     def print_board(self):
         for idx, squares in enumerate(self.attack_squares):
             print(f"Board {idx + 1}:")
