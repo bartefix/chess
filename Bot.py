@@ -15,8 +15,8 @@ class Bot:
         moves_list = list(moves)
         #sort_moves(self.board, moves_list)
 
-        if len(moves_list) == 1: # If only one move we don't have a choice
-            return moves_list[0]
+        # if len(moves_list) == 1: # If only one move we don't have a choice
+        #     return moves_list[0] # But it's not that great because then evaluation says everything is fine even if it's mate in 1
 
         #print(moves_list)
         depth = _depth
@@ -30,8 +30,9 @@ class Bot:
         This is a simplified version of a Principle Variation.
         '''
         set_last_best_move(None,-1)
-        _, best_move = search(copy_board, depth-2, alpha, beta)
-        set_last_best_move(best_move,depth)
+        if depth > 2:
+            _, best_move = search(copy_board, depth-2, alpha, beta)
+            set_last_best_move(best_move,depth)
 
         copy_board = copy.deepcopy(self.board)
         eval,best_move = search(copy_board,depth,alpha,beta)

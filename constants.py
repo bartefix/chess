@@ -50,6 +50,10 @@ eval_test_positions = [
     "r2qr1k1/ppp2pbp/2p1b1p1/4N2n/3PPB2/2N5/PPP2PPP/R2QR1K1 w Qq - 0 1",
     "8/1p6/8/6b1/7p/7K/5k2/8 w - - 0 1", #10
     "r1b1kb1r/pppqppp1/2n2n1p/3p4/3PP3/2NB1N2/PPP2PPP/R1BQ1RK1 w q - 1 8",
+    "1kr1r3/1ppqbpp1/p2p1nb1/PP1Pp3/2P1P2p/2NBBP1P/5QP1/RR4K1 b - - 0 1",
+    "1k1rr3/3qbpp1/RP1p1nb1/3pp3/4P2p/2NBBP1P/Q5P1/1R4K1 b - - 1 8",
+    "7k/4p3/6Q1/3P4/8/2B5/PPP1PPPP/RN2KBNR b KQ - 0 1",
+    "r5k1/p1p2ppp/2r5/4Rp2/3P2q1/2PQ2P1/P4P1P/R5K1 b Qq - 0 1", #15
 ]
 fenpositions_true_values = [
     [1,20,400,8902,197281,4865609],

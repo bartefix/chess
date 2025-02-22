@@ -371,7 +371,7 @@ def make_move(board, move):
 
     chessboard[j] = piece
     if len(move.enable_passant) > 0:
-        board.passants = move.get_passants()
+        board.passants = move.get_passants().copy()
     board.who_to_move = BLACK if board.who_to_move == WHITE else WHITE
     if board.who_to_move == BLACK:
         calculate_attack_squares(board, WHITE)
