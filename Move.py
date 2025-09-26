@@ -18,9 +18,6 @@ class Move:
         self.prevents_castle = prevents_castle # values to be and-ed with
         self.enable_passant = enable_passant # set of en passant moves for next turn
 
-    '''
-    there WAS an uncaught bug where a (possibly) queen move adds two identical moves to the set. This solves the issue 
-    '''
     def __eq__(self, other):
         if not isinstance(other, Move):
             return False

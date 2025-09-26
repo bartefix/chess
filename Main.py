@@ -7,6 +7,7 @@ from evaluation import count_positions, evaluate_position, sort_moves
 from moves import *
 from Bot import Bot
 import time
+from Button import Button
 
 p.init()
 p.mixer.init()
@@ -48,49 +49,37 @@ def play_sound():
 def resize(image):
     return p.transform.scale(image, (SIZE * image.get_width() / image.get_height(), SIZE))
 
-
-def draw_piece(i, j, piece):
-    type = piece.type + piece.colour
-    window.blit(resize(table[type - 1]),
-                (j * BLOCK + (BLOCK - table[type - 1].get_width()) / 2, i * BLOCK + BLOCK / 10))
-
 def draw_piece2(i, j, piece, surface):
     type = piece.type + piece.colour
     resized_piece = resize(table[type - 1])
+    i,j = (i,j) if not is_board_flipped else (7-i,7-j)
     x = j * BLOCK + (BLOCK - resized_piece.get_width()) / 2
     y = i * BLOCK + BLOCK / 10
     surface.blit(resized_piece, (x, y))
 
-def draw_piece_pixel(i, j, piece):
+def draw_piece_pixel(x, y, piece):
     type = piece.type + piece.colour
-    window.blit(resize(table[type - 1]), (j - table[type - 1].get_width() / 2, i - table[type - 1].get_height() / 2))
+    window.blit(resize(table[type - 1]), (y - table[type - 1].get_width() / 2, x - table[type - 1].get_height() / 2))
 
 def draw_board(board):
     global cached_background
 
-    cached_background = p.Surface((WIDTH, HEIGHT))  # Create a new cached surface
-    cached_background.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))  # Draw the board
-
-    # for i in range(8):
-    #     for j in range(8):
-    #         x = j * BLOCK
-    #         y = i * BLOCK
-    #
-    #         # Highlight squares attacked by white
-    #         if board.attack_squares[0][i*8+j] == 1:
-    #             p.draw.rect(cached_background, (255, 255, 0, 100), (x, y, BLOCK, BLOCK))  # Yellow color
-    #         # # Highlight squares attacked by black
-    #         if board.attack_squares[1][i*8+j] == 1:
-    #             p.draw.rect(cached_background, (0, 0, 255, 100), (x, y, BLOCK, BLOCK))  # Blue color
-
-    window.blit(p.transform.scale(chessboard_img, (WIDTH, HEIGHT)), (0, 0))
+    cached_background = p.Surface((HEIGHT, HEIGHT))  # Create a new cached surface
+    cached_background.blit(p.transform.scale(chessboard_img, (HEIGHT, HEIGHT)), (0, 0))  # Draw the board from top left corner
+    window.blit(p.transform.scale(chessboard_img, (HEIGHT, HEIGHT)), (0, 0))
     for i in range(8):
         for j in range(8):
             if board[i, j] != 0 and not move_piece_from == (i,j):
                 if lastmove is not None:
                     if lastmove.getpair_to() == (i,j):
-                        p.draw.rect(cached_background, (252,205,76), (j * BLOCK, i * BLOCK, BLOCK, BLOCK))
+                        x,y = (i,j) if not is_board_flipped else (7-i,7-j)
+                        p.draw.rect(cached_background, (252,205,76), (y * BLOCK, x * BLOCK, BLOCK, BLOCK))
                 draw_piece2(i, j, board[i, j],cached_background)
+
+    ui_rect = p.Rect(HEIGHT, 0, WIDTH-HEIGHT, HEIGHT)
+    p.draw.rect(window, (50, 50, 50), ui_rect)
+    for button in buttons:
+        button.draw(window)
 
 def retrieve_move(moves, move_from, move_to):
 
@@ -120,6 +109,7 @@ def valid_moves(board,move_from, selected_piece):
 def draw_moves(moves):
     for move in moves:
         (i, j) = move.getpair_to()
+        i,j = (i,j) if not is_board_flipped else (7-i,7-j)
         window.blit(sniper, (j * BLOCK + 10, i * BLOCK + 10))
 
 def draw_button():
@@ -142,24 +132,19 @@ def draw_button():
         text = font.render(f"{player} WON", True, (0, 0, 0))
         window.blit(text, (WIDTH // 2 - text.get_width() // 2, 30))
 
-window = p.display.set_mode((WIDTH, HEIGHT))
-board = Board()
-selected_piece = 0
-move_piece_from = (-1, -1)
-available_moves = set()
-lastmove = None
-state = PLAYING
-bot = Bot(board)
-WHITE_PLAYER = True #false means bot
-BLACK_PLAYER = False
-
 def setup_game():
-    global selected_piece, move_piece_from, available_moves,board,bot
+    global selected_piece, move_piece_from, available_moves,board,bot,state, is_board_flipped, lastmove
+    is_board_flipped = False
     board = Board()
     selected_piece = 0
     move_piece_from = (-1, -1)
     available_moves = set()
     bot = Bot(board)
+    lastmove = None
+    state = PLAYING
+    draw_board(board)
+    window.blit(cached_background, (0, 0))
+    pygame.display.update()
 
 def play_as_bot(depth):
     global lastmove, state
@@ -178,6 +163,37 @@ def play_as_bot(depth):
     play_sound()
     state = isgameover(board)
     pygame.display.update()
+
+def flip_board():
+    global is_board_flipped
+    is_board_flipped = not is_board_flipped
+    draw_board(board)
+    window.blit(cached_background, (0, 0))
+    pygame.display.update()
+
+def switch_sides():
+    global WHITE_PLAYER,BLACK_PLAYER
+    WHITE_PLAYER = not WHITE_PLAYER
+    BLACK_PLAYER = not BLACK_PLAYER
+
+window = p.display.set_mode((WIDTH, HEIGHT))
+board = Board()
+selected_piece = 0
+move_piece_from = (-1, -1)
+available_moves = set()
+lastmove = None
+state = PLAYING
+bot = Bot(board)
+WHITE_PLAYER = False #false means bot
+BLACK_PLAYER = False
+is_board_flipped=False
+
+buttons = [
+    Button((HEIGHT + 20, 20, 160, 40), "New Game", setup_game, p.font.SysFont(None, 32)),
+    Button((HEIGHT + 20, 80, 160, 40), "Flip Board",flip_board, p.font.SysFont(None, 32)),
+    #Button((HEIGHT + 20, 140, 160, 40), "Undo", lambda: print("Not working"), p.font.SysFont(None, 32)),
+    Button( (HEIGHT + 20, 140, 160, 40), "Switch sides", switch_sides, p.font.SysFont(None, 32)),
+]
 
 if __name__ == "__main__":
 
@@ -205,8 +221,11 @@ if __name__ == "__main__":
                 play_as_bot(3)
                 continue
 
+            for button in buttons:
+                button.handle_event(event)
+
             if state != PLAYING:
-                pass
+
                 draw_board(board)
                 window.blit(cached_background, (0, 0))
                 draw_button()
@@ -219,10 +238,6 @@ if __name__ == "__main__":
                     if button_rect.collidepoint(event.pos):
                         print("RESTART")
                         setup_game()
-                        state = PLAYING
-                        draw_board(board)
-                        window.blit(cached_background, (0, 0))
-                        pygame.display.update()
             else:
                 if event.type == p.QUIT:
                     run = False
@@ -231,6 +246,9 @@ if __name__ == "__main__":
                     if event.key == pygame.K_LEFT:
                         if lastmove is not None:
                             unmake_move(board,lastmove)
+                            draw_moves(available_moves)
+                            draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
+
                             lastmove = None
                         draw_board(board)
                         window.blit(cached_background, (0, 0))
@@ -239,17 +257,18 @@ if __name__ == "__main__":
                     if event.button == 1:
                         coords = (floor(event.pos[0] / BLOCK), floor(event.pos[1] / BLOCK))
                         (j, i) = coords
+                        i,j = (i,j) if not is_board_flipped else (7-i,7-j)
                         coords = (i, j)
+                        if max(i,j)>=8:
+                            continue
                         selected_piece = board[i, j]
                         move_piece_from = coords
-
                         if selected_piece != 0:
                             available_moves = valid_moves(board, move_piece_from, selected_piece)
                             draw_board(board)
                             window.blit(cached_background, (0, 0))
-                            draw_moves(available_moves)
                             draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
-
+                            draw_moves(available_moves)
                 if event.type == p.MOUSEMOTION:
                     if selected_piece != 0:
                         window.blit(cached_background, (0, 0))
@@ -262,7 +281,8 @@ if __name__ == "__main__":
                         continue
 
                     coords = (floor(event.pos[1] / BLOCK), floor(event.pos[0] / BLOCK))
-
+                    i,j = coords
+                    coords = (i, j) if not is_board_flipped else (7-i,7-j)
                     if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None:
                         board[move_piece_from] = selected_piece
                         make_move(board, move)

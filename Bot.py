@@ -1,3 +1,4 @@
+import copy
 import time
 
 from moves import *
@@ -27,7 +28,7 @@ class Bot:
         '''
         We first search at a super shallow depth, and in the next iteration look at the best move
         from previous iteration first. Despite the shallow depth the moves are often the best moves found at deeper depth.
-        This is a simplified version of a Principle Variation.
+        This is a simplified version of the Principle Variation.
         '''
         set_last_best_move(None,-1)
         if depth > 2:
