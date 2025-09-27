@@ -5,7 +5,7 @@ from Move import Move
 
 
 '''
-Attacked squares differ from calculating moves because we can attack squares with pieces of our colour.
+Attacked squares differ from calculating moves because we can attack squares occupied by pieces of our colour.
 It also requieres much less computation so it is more efficient to write another set of functions
 '''
 

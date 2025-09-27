@@ -1,4 +1,4 @@
-
+import threading
 import pygame
 import pygame as p
 from constants import *
@@ -163,6 +163,8 @@ def play_as_bot(depth):
     play_sound()
     state = isgameover(board)
     pygame.display.update()
+    if selected_piece != 0:
+        draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
 
 def flip_board():
     global is_board_flipped
@@ -176,6 +178,12 @@ def switch_sides():
     WHITE_PLAYER = not WHITE_PLAYER
     BLACK_PLAYER = not BLACK_PLAYER
 
+def bot_move(depth,colour):
+    play_as_bot(depth)
+    board.who_to_move = WHITE if colour == BLACK else BLACK
+    global bot_thinking
+    bot_thinking = False
+
 window = p.display.set_mode((WIDTH, HEIGHT))
 board = Board()
 selected_piece = 0
@@ -184,9 +192,10 @@ available_moves = set()
 lastmove = None
 state = PLAYING
 bot = Bot(board)
-WHITE_PLAYER = False #false means bot
+WHITE_PLAYER = True #false means bot
 BLACK_PLAYER = False
 is_board_flipped=False
+bot_thinking = False
 
 buttons = [
     Button((HEIGHT + 20, 20, 160, 40), "New Game", setup_game, p.font.SysFont(None, 32)),
@@ -211,15 +220,13 @@ if __name__ == "__main__":
                 play_sound()
                 first_turn = False
 
-            if board.who_to_move == BLACK and state==PLAYING and not BLACK_PLAYER:
-                time.sleep(TIMEBETWEENMOVES)
-                play_as_bot(3)
-                continue
+            if board.who_to_move == BLACK and state == PLAYING and not BLACK_PLAYER and not bot_thinking:
+                bot_thinking = True
+                threading.Thread(target=bot_move, args=(3, BLACK), daemon=True).start()
 
-            if board.who_to_move == WHITE and state==PLAYING and not WHITE_PLAYER:
-                time.sleep(TIMEBETWEENMOVES)
-                play_as_bot(3)
-                continue
+            if board.who_to_move == WHITE and state == PLAYING and not WHITE_PLAYER and not bot_thinking:
+                bot_thinking = True
+                threading.Thread(target=bot_move, args=(3, WHITE), daemon=True).start()
 
             for button in buttons:
                 button.handle_event(event)
@@ -241,17 +248,6 @@ if __name__ == "__main__":
             else:
                 if event.type == p.QUIT:
                     run = False
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        if lastmove is not None:
-                            unmake_move(board,lastmove)
-                            draw_moves(available_moves)
-                            draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
-
-                            lastmove = None
-                        draw_board(board)
-                        window.blit(cached_background, (0, 0))
 
                 if event.type == p.MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -283,7 +279,7 @@ if __name__ == "__main__":
                     coords = (floor(event.pos[1] / BLOCK), floor(event.pos[0] / BLOCK))
                     i,j = coords
                     coords = (i, j) if not is_board_flipped else (7-i,7-j)
-                    if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None:
+                    if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None and not bot_thinking:
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
                         lastmove = move

@@ -11,8 +11,8 @@ class Bot:
         self.board = board
 
     def give_move(self,_depth):
-
-        moves = all_legal_moves(self.board,self.board.who_to_move)
+        copy_board = copy.deepcopy(self.board)
+        moves = all_legal_moves(copy_board,copy_board.who_to_move)
         moves_list = list(moves)
         #sort_moves(self.board, moves_list)
 
@@ -22,7 +22,6 @@ class Bot:
         #print(moves_list)
         depth = _depth
         colour_modifier = 1 if self.board.who_to_move == WHITE else -1
-        copy_board = copy.deepcopy(self.board)
         alpha = float("-inf")
         beta = float("inf")
         '''
