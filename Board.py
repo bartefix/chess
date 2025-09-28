@@ -107,3 +107,49 @@ class Board:
         boardcopy.castle_rights = self.castle_rights.copy()
         boardcopy.prev_castle_rights = self.prev_castle_rights.copy()
         return boardcopy
+
+    def to_fen(self):
+        piece_map = {
+            PAWN: 'p', KNIGHT: 'n', BISHOP: 'b',
+            ROOK: 'r', QUEEN: 'q', KING: 'k'
+        }
+
+        rows = []
+        for rank in range(8):  # rank 0 = top (8th rank)
+            row = ""
+            empty = 0
+            for file in range(8):
+                idx = rank * 8 + file
+                piece = self.chessboard[idx]
+                if piece == 0:
+                    empty += 1
+                else:
+                    if empty > 0:
+                        row += str(empty)
+                        empty = 0
+                    symbol = piece_map[piece.type]
+                    if piece.colour == WHITE:
+                        symbol = symbol.upper()
+                    row += symbol
+            if empty > 0:
+                row += str(empty)
+            rows.append(row)
+
+        piece_placement = "/".join(rows)
+
+        active_color = "w" if self.who_to_move == WHITE else "b"
+
+        castling = ""
+        if self.castle_rights[3]: castling += "K"
+        if self.castle_rights[2]: castling += "Q"
+        if self.castle_rights[1]: castling += "k"
+        if self.castle_rights[0]: castling += "q"
+        if castling == "": castling = "-"
+
+        en_passant = "-"
+
+        # no halfmove / fullmove counters
+        halfmove_clock = "0"
+        fullmove_number = "1"
+
+        return f"{piece_placement} {active_color} {castling} {en_passant} {halfmove_clock} {fullmove_number}"

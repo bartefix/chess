@@ -5,12 +5,14 @@ from moves import *
 from constants import *
 from evaluation import *
 import random
+import sys, os
 
 class Bot:
     def __init__(self,board):
         self.board = board
 
     def give_move(self,_depth):
+        print(self.board.who_to_move)
         copy_board = copy.deepcopy(self.board)
         moves = all_legal_moves(copy_board,copy_board.who_to_move)
         moves_list = list(moves)
@@ -33,31 +35,10 @@ class Bot:
         if depth > 2:
             _, best_move = search(copy_board, depth-2, alpha, beta)
             set_last_best_move(best_move,depth)
-
         copy_board = copy.deepcopy(self.board)
         eval,best_move = search(copy_board,depth,alpha,beta)
         print(f"Best move: {best_move}, eval: {eval*colour_modifier:.2f}")
-        print_nps()
         return best_move
-
-        # random.shuffle(moves_list)
-        # best_eval = float("-inf")
-        # best_move = -1
-        # for i in range(n):
-        #     make_move(copy_board,moves_list[i])
-        #     eval,path = search(copy_board,depth-1,-beta,-alpha)
-        #     eval = -eval
-        #     unmake_move(copy_board,moves_list[i])
-        #     print(f"Depth: {depth} - After move: {moves_list[i].get_stockfish_format()}, eval: {eval}, path: {path}")
-        #     if eval >= best_eval:
-        #         best_eval = eval
-        #         best_move = moves_list[i]
-        #     alpha = max(alpha, eval)
-        #
-        # #print(evaluate_position(self.board))
-        # print("Best move: ",best_move)
-        # print_nps()
-        # return best_move
 
     def benchmark(self,_depth, package): # package is index under which the position package is
         total_time = [0] * _depth        # second index is for positions or their evaluations
@@ -74,16 +55,52 @@ class Bot:
         formatted_total_time = [f"{time:.6f}" for time in total_time]
         print(f" Total time: {formatted_total_time}")
 
-    def benchmark2(self,_depth, package):
+    def benchmark_search(self,_depth, package):
         total_time=0
         total_nodes=0
         for i in range(len(positions_package[package])):
                 self.board.load_fen(positions_package[package][i])
                 start_time = time.perf_counter()
+
+                old_stdout = sys.stdout
+                sys.stdout = open(os.devnull, 'w')
+
                 move = self.give_move(_depth)
+
+                sys.stdout.close()
+                sys.stdout = old_stdout
+
                 total_nodes +=print_nps()
                 end_time = time.perf_counter()
                 elapsed_time = end_time - start_time
                 total_time += elapsed_time
                 print(f" Move: {move}, Elapsed time: {elapsed_time:.6f} seconds")
         print(f"Total time: {total_time}, total nodes: {total_nodes}")
+
+    def benchmark_puzzles(self,_depth):
+        total_time=0
+        total_nodes=0
+        total_correct=0
+        for i in range(len(puzzlerush_positions)):
+                self.board.load_fen(puzzlerush_positions[i][0])
+                start_time = time.perf_counter()
+
+                old_stdout = sys.stdout
+                sys.stdout = open(os.devnull, 'w')
+
+                move = self.give_move(_depth)
+
+                sys.stdout.close()
+                sys.stdout = old_stdout
+
+                if str(move) == puzzlerush_positions[i][1]:
+                    total_correct += 1
+                    print(f"Puzzle {i} CORRECT")
+                else:
+                    print(f"Puzzle {i} WRONG")
+                total_nodes +=print_nps()
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
+                total_time += elapsed_time
+                print(f" Move: {move}, Correct Move: {puzzlerush_positions[i][1]}, Elapsed time: {elapsed_time:.6f} seconds")
+        print(f"Total correct: {total_correct}/{len(puzzlerush_positions)}, Total time: {total_time}, total nodes: {total_nodes}")

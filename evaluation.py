@@ -84,9 +84,6 @@ def move_heuristic(board,move):
     if board.pawn_attack_squares[index][move.move_from] == 1 and chessboard[move.move_from].type != PAWN:
         score += piece_value[chessboard[move.move_from].type-1] # If we move a piece from a pawn held square its probably good
 
-    # if board.attack_squares[index][move.move_to] == 1: #and board.attack_squares[1-index][move.move_to] == 0:
-    #     score -= piece_value[chessboard[move.move_from].type-1]
-
     score += squares_all[chessboard[move.move_from].type-1][move.move_to] - squares_all[chessboard[move.move_from].type-1][move.move_from]
     return score
 
@@ -110,6 +107,8 @@ def search(board,depth,alpha,beta):
     candidate = None
     if depth==0:
         eval = search_until_no_captures(board,alpha,beta)
+        #eval = evaluate_position(board)
+        #print(eval, board.to_fen())
         return eval,candidate
     board_copy = board.copy()
     moves = all_legal_moves(board_copy, board_copy.who_to_move)
@@ -145,7 +144,8 @@ def search(board,depth,alpha,beta):
 
         if abs(eval) > MATEINONE/2:
             eval+= MATEDOWNSTEP * (-1 if eval > 0 else 1)
-
+        # if depth==4:
+        #     print(eval,move)
         if eval > best:
             best = eval
             candidate = move
@@ -153,7 +153,6 @@ def search(board,depth,alpha,beta):
         alpha = max(alpha, eval)
         if alpha >= beta:
             break
-
     return best,candidate
 
 def search_until_no_captures(board, alpha, beta):
@@ -178,15 +177,17 @@ def search_until_no_captures(board, alpha, beta):
 
             make_move(board_copy, move)
             eval = -search_until_no_captures(board_copy, -beta, -alpha)
+            #print(eval, board_copy.to_fen())
             unmake_move(board_copy, move)
 
             if eval >= beta:
-                return beta  # Beta-cutoff
-
+                return eval  # Beta-cutoff
+            if eval > standard_evaluation:
+                standard_evaluation = eval
             if eval > alpha:
                 alpha = eval  # update best found score
 
-    return alpha  # return best found evaluation
+    return standard_evaluation  # return best found evaluation
 
 def count_positions(board,depth):
 

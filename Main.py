@@ -1,6 +1,9 @@
+import copy
 import threading
 import pygame
 import pygame as p
+from win32con import NULLREGION
+
 from constants import *
 from Board import Board
 from evaluation import count_positions, evaluate_position, sort_moves
@@ -58,6 +61,8 @@ def draw_piece2(i, j, piece, surface):
     surface.blit(resized_piece, (x, y))
 
 def draw_piece_pixel(x, y, piece):
+    if not isinstance(piece, Piece):
+        return
     type = piece.type + piece.colour
     window.blit(resize(table[type - 1]), (y - table[type - 1].get_width() / 2, x - table[type - 1].get_height() / 2))
 
@@ -147,7 +152,7 @@ def setup_game():
     pygame.display.update()
 
 def play_as_bot(depth):
-    global lastmove, state
+    global lastmove, state, selected_piece,move_piece_from
     draw_board(board)  # Draw board first
     window.blit(cached_background, (0, 0))
     pygame.display.update()
@@ -156,12 +161,17 @@ def play_as_bot(depth):
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
     print(f"Elapsed time: {elapsed_time:.6f} seconds")
+    if move.getpair_to() == move_piece_from:
+        selected_piece = 0
+        move_piece_from = (-1, -1)
     make_move(board, move)
     lastmove = move
     draw_board(board)
     window.blit(cached_background, (0, 0))
     play_sound()
     state = isgameover(board)
+    if state != PLAYING:
+        draw_button()
     pygame.display.update()
     if selected_piece != 0:
         draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
@@ -184,8 +194,19 @@ def bot_move(depth,colour):
     global bot_thinking
     bot_thinking = False
 
+def undo_move():
+    global board
+    if not bot_thinking:
+        board = copy.deepcopy(prev_board)
+        bot.board = board
+        draw_board(board)
+        window.blit(cached_background, (0, 0))
+        pygame.display.update()
+        print(board.who_to_move)
+
 window = p.display.set_mode((WIDTH, HEIGHT))
 board = Board()
+prev_board = Board()
 selected_piece = 0
 move_piece_from = (-1, -1)
 available_moves = set()
@@ -200,8 +221,8 @@ bot_thinking = False
 buttons = [
     Button((HEIGHT + 20, 20, 160, 40), "New Game", setup_game, p.font.SysFont(None, 32)),
     Button((HEIGHT + 20, 80, 160, 40), "Flip Board",flip_board, p.font.SysFont(None, 32)),
-    #Button((HEIGHT + 20, 140, 160, 40), "Undo", lambda: print("Not working"), p.font.SysFont(None, 32)),
     Button( (HEIGHT + 20, 140, 160, 40), "Switch sides", switch_sides, p.font.SysFont(None, 32)),
+    Button((HEIGHT + 20, 200, 160, 40), "Undo", undo_move, p.font.SysFont(None, 32)),
 ]
 
 if __name__ == "__main__":
@@ -233,11 +254,6 @@ if __name__ == "__main__":
 
             if state != PLAYING:
 
-                draw_board(board)
-                window.blit(cached_background, (0, 0))
-                draw_button()
-                pygame.display.update()
-
                 if event.type == p.QUIT:
                     run = False
 
@@ -267,6 +283,7 @@ if __name__ == "__main__":
                             draw_moves(available_moves)
                 if event.type == p.MOUSEMOTION:
                     if selected_piece != 0:
+                        #draw_board(board) <- lowers fps
                         window.blit(cached_background, (0, 0))
                         draw_moves(available_moves)
                         draw_piece_pixel(event.pos[1], event.pos[0], selected_piece)
@@ -280,12 +297,14 @@ if __name__ == "__main__":
                     i,j = coords
                     coords = (i, j) if not is_board_flipped else (7-i,7-j)
                     if (move := valid_move(board, coords, move_piece_from, selected_piece, board.who_to_move)) is not None and not bot_thinking:
+                        prev_board = copy.deepcopy(board)
                         board[move_piece_from] = selected_piece
                         make_move(board, move)
                         lastmove = move
                         play_sound()
                     else:
-                        board[move_piece_from[0], move_piece_from[1]] = selected_piece
+                         if board[move_piece_from[0], move_piece_from[1]] != 0:
+                             board[move_piece_from[0], move_piece_from[1]] = selected_piece
 
                     selected_piece = 0
                     move_piece_from = (-1, -1)
